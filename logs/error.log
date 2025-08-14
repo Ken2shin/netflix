@@ -1,0 +1,90 @@
+[12-Aug-2025 17:24:08 America/Mexico_City] PHP Fatal error:  Uncaught TypeError: Cannot access offset of type string on string in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\models\Profile.php:18
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\controllers\AuthController.php(197): Profile->create('4', 'usuario', 'avatar3.png', 0)
+#1 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\add-profile.php(18): AuthController->addProfile()
+#2 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\index.php(71): include('C:\\Users\\EMANUE...')
+#3 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\models\Profile.php on line 18
+[12-Aug-2025 17:24:13 America/Mexico_City] PHP Fatal error:  Uncaught TypeError: Cannot access offset of type string on string in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\models\Profile.php:18
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\controllers\AuthController.php(197): Profile->create('4', 'usuario', 'avatar3.png', 0)
+#1 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\add-profile.php(18): AuthController->addProfile()
+#2 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\index.php(71): include('C:\\Users\\EMANUE...')
+#3 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\models\Profile.php on line 18
+[13-Aug-2025 09:57:43 America/Mexico_City] PHP Fatal error:  Uncaught Exception: Database connection failed: could not find driver in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\database.php:52
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\controllers\AuthController.php(13): Database->getConnection()
+#1 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\login.php(5): AuthController->__construct()
+#2 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\database.php on line 52
+[13-Aug-2025 18:42:23 UTC] PHP Warning:  Undefined array key "subscription_type" in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\register.php on line 22
+[13-Aug-2025 18:42:23 UTC] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php on line 23
+[13-Aug-2025 18:49:03 UTC] PHP Warning:  Undefined array key "subscription_type" in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\register.php on line 22
+[13-Aug-2025 18:49:03 UTC] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php on line 23
+[13-Aug-2025 18:50:00 UTC] PHP Warning:  Undefined array key "subscription_type" in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\register.php on line 22
+[13-Aug-2025 18:50:00 UTC] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php on line 23
+[13-Aug-2025 18:50:01 UTC] PHP Warning:  Undefined array key "subscription_type" in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\register.php on line 22
+[13-Aug-2025 18:50:01 UTC] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php on line 23
+[13-Aug-2025 18:50:02 UTC] PHP Warning:  Undefined array key "subscription_type" in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\register.php on line 22
+[13-Aug-2025 18:50:02 UTC] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php on line 23
+[13-Aug-2025 18:50:14 UTC] PHP Warning:  Undefined array key "subscription_type" in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\register.php on line 22
+[13-Aug-2025 18:50:14 UTC] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php on line 23
+[13-Aug-2025 12:53:53 America/Mexico_City] PHP Warning:  Undefined array key "subscription_type" in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\register.php on line 22
+[13-Aug-2025 12:53:53 America/Mexico_City] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php on line 33
+[13-Aug-2025 12:53:53 America/Mexico_City] PHP Fatal error:  Cannot redeclare getCurrentUser() (previously declared in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php:72) in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\middleware\auth.php on line 28
+[13-Aug-2025 13:05:20 America/Mexico_City] PHP Fatal error:  Cannot redeclare getCurrentUser() (previously declared in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php:72) in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\middleware\auth.php on line 28
+[13-Aug-2025 13:10:42 America/Mexico_City] Error creating tables: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 13:13:21 America/Mexico_City] Error creating tables: SQLSTATE[42S02]: Base table or view not found: 1932 Table 'netflix.users' doesn't exist in engine
+[13-Aug-2025 13:13:22 America/Mexico_City] Error creating tables: SQLSTATE[42S02]: Base table or view not found: 1932 Table 'netflix.users' doesn't exist in engine
+[13-Aug-2025 13:13:43 America/Mexico_City] Error creating tables: SQLSTATE[42S02]: Base table or view not found: 1932 Table 'netflix.users' doesn't exist in engine
+[13-Aug-2025 13:35:48 America/Mexico_City] Error creating tables: SQLSTATE[42S02]: Base table or view not found: 1932 Table 'netflix.users' doesn't exist in engine
+[13-Aug-2025 19:46:50 UTC] Error creating tables: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 19:46:50 UTC] AuthController initialization error: Error creando tablas: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 19:46:50 UTC] Login page error: Error de inicialización del controlador
+[13-Aug-2025 19:46:51 UTC] Error creating tables: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 19:46:51 UTC] AuthController initialization error: Error creando tablas: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 19:46:51 UTC] Login page error: Error de inicialización del controlador
+[13-Aug-2025 19:55:14 UTC] PHP Warning:  Undefined variable $csrf_token in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\auth\login.php on line 21
+[13-Aug-2025 19:55:21 UTC] Error creating tables: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 19:55:21 UTC] AuthController initialization error: Error creando tablas: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 19:55:21 UTC] Register page error: Error de inicialización del controlador
+[13-Aug-2025 19:55:26 UTC] Error creating tables: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 19:55:26 UTC] AuthController initialization error: Error creando tablas: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 19:55:26 UTC] Register page error: Error de inicialización del controlador
+[13-Aug-2025 19:55:27 UTC] Error creating tables: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 19:55:27 UTC] AuthController initialization error: Error creando tablas: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 19:55:27 UTC] Register page error: Error de inicialización del controlador
+[13-Aug-2025 19:55:35 UTC] Error creating tables: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 19:55:35 UTC] AuthController initialization error: Error creando tablas: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 19:55:35 UTC] Register page error: Error de inicialización del controlador
+[13-Aug-2025 20:10:47 UTC] PHP Warning:  Undefined variable $csrf_token in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\auth\login.php on line 21
+[13-Aug-2025 20:10:53 UTC] Error creating tables: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 20:10:53 UTC] AuthController initialization error: Error creando tablas: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 20:10:53 UTC] Login page error: Error de inicialización del controlador
+[13-Aug-2025 20:23:06 UTC] PHP Warning:  Undefined variable $csrf_token in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\auth\login.php on line 21
+[13-Aug-2025 20:23:32 UTC] Error creating tables: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 20:37:24 UTC] Error creating tables: SQLSTATE[HY000]: General error: 1005 Can't create table `netflix_clone`.`profiles` (errno: 150 "Foreign key constraint is incorrectly formed")
+[13-Aug-2025 20:38:14 UTC] Error inserting sample data: SQLSTATE[42S02]: Base table or view not found: 1932 Table 'netflix.users' doesn't exist in engine
+[13-Aug-2025 20:46:53 UTC] Error verifying tables: SQLSTATE[42S02]: Base table or view not found: 1932 Table 'netflix.users' doesn't exist in engine
+[13-Aug-2025 20:47:16 UTC] Error verifying tables: SQLSTATE[42S02]: Base table or view not found: 1932 Table 'netflix.users' doesn't exist in engine
+[13-Aug-2025 20:47:16 UTC] AuthController initialization error: Error verificando las tablas: SQLSTATE[42S02]: Base table or view not found: 1932 Table 'netflix.users' doesn't exist in engine
+[13-Aug-2025 20:47:16 UTC] Register page error: Error de inicialización del controlador
+[13-Aug-2025 20:47:33 UTC] Error verifying tables: SQLSTATE[42S02]: Base table or view not found: 1932 Table 'netflix.users' doesn't exist in engine
+[14-Aug-2025 20:12:55 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3307, Usuario=root
+[14-Aug-2025 20:12:55 UTC] Error inicializando base de datos: SQLSTATE[42S02]: Base table or view not found: 1932 Table 'netflix.users' doesn't exist in engine
+[14-Aug-2025 20:13:37 UTC] Error de conexión a la base de datos: No se pudo conectar con ninguna configuración. Último error: SQLSTATE[HY000] [1045] Access denied for user 'root'@'localhost' (using password: NO)
+[14-Aug-2025 20:38:23 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3306, Usuario=root
+[14-Aug-2025 20:38:23 UTC] Error inicializando base de datos: SQLSTATE[HY000]: General error: 1813 Tablespace for table '`netflix`.`users`' exists. Please DISCARD the tablespace before IMPORT
+[14-Aug-2025 20:38:23 UTC] Error en registro: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'netflix.users' doesn't exist
+[14-Aug-2025 20:39:22 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3306, Usuario=root
+[14-Aug-2025 20:39:23 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3306, Usuario=root
+[14-Aug-2025 20:39:34 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3306, Usuario=root
+[14-Aug-2025 20:39:38 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3306, Usuario=root
+[14-Aug-2025 20:41:21 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3306, Usuario=root
+[14-Aug-2025 20:44:33 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3306, Usuario=root
+[14-Aug-2025 20:44:34 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3306, Usuario=root
+[14-Aug-2025 20:44:40 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3306, Usuario=root
+[14-Aug-2025 20:51:31 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3306, Usuario=root
+[14-Aug-2025 20:51:32 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3306, Usuario=root
+[14-Aug-2025 20:51:37 UTC] Conexión exitosa con configuración: Host=localhost, Puerto=3306, Usuario=root
