@@ -9,6 +9,7 @@ class User {
     
     public function login($email, $password) {
         try {
+            // Solo seleccionar campos que existen en la tabla users
             $query = "SELECT id, name, email, password, is_admin FROM " . $this->table_name . " WHERE email = ?";
             $stmt = $this->conn->prepare($query);
             $stmt->execute([$email]);
@@ -16,6 +17,11 @@ class User {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($user && password_verify($password, $user['password'])) {
+                // Actualizar último login
+                $updateQuery = "UPDATE " . $this->table_name . " SET last_login = NOW() WHERE id = ?";
+                $updateStmt = $this->conn->prepare($updateQuery);
+                $updateStmt->execute([$user['id']]);
+                
                 return $user;
             }
             
@@ -37,7 +43,7 @@ class User {
                 return ['success' => false, 'message' => 'El email ya está registrado'];
             }
 
-            // Insertar nuevo usuario
+            // Insertar nuevo usuario - solo campos que existen
             $query = "INSERT INTO " . $this->table_name . " (name, email, password) VALUES (?, ?, ?)";
             $stmt = $this->conn->prepare($query);
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
@@ -55,7 +61,7 @@ class User {
 
     public function findByEmail($email) {
         try {
-            $query = "SELECT * FROM " . $this->table_name . " WHERE email = ?";
+            $query = "SELECT id, name, email, is_admin, created_at FROM " . $this->table_name . " WHERE email = ?";
             $stmt = $this->conn->prepare($query);
             $stmt->execute([$email]);
             
@@ -68,7 +74,7 @@ class User {
     
     public function findById($id) {
         try {
-            $query = "SELECT * FROM " . $this->table_name . " WHERE id = ?";
+            $query = "SELECT id, name, email, is_admin, created_at FROM " . $this->table_name . " WHERE id = ?";
             $stmt = $this->conn->prepare($query);
             $stmt->execute([$id]);
             

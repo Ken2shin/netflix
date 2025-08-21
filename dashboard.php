@@ -1,62 +1,73 @@
 <?php
-session_start();
+require_once 'config/config.php';
 require_once 'config/database.php';
 
-// Verificar si el usuario está logueado
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
+// Verificar autenticación
+requireLogin();
+
+try {
+    // Obtener conexión a la base de datos
+    $db = getConnection();
+    
+    // Obtener contenido destacado de forma segura
+    $featured_content = null;
+    try {
+        // Verificar si existe la columna is_featured
+        if (columnExists('content', 'is_featured')) {
+            $sql = "SELECT * FROM content WHERE is_featured = 1 ORDER BY RAND() LIMIT 1";
+        } else {
+            $sql = "SELECT * FROM content ORDER BY RAND() LIMIT 1";
+        }
+        
+        $stmt = $db->prepare($sql);
+        $stmt->execute();
+        $featured_content = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Error obteniendo contenido destacado: " . $e->getMessage());
+    }
+    
+    // Obtener contenido por categorías de forma segura
+    $content_data = [];
+    
+    // Verificar qué columnas existen antes de hacer las consultas
+    $hasViewCount = columnExists('content', 'view_count');
+    $orderBy = $hasViewCount ? 'view_count DESC' : 'id DESC';
+    
+    $categories = [
+        'Tendencias' => "SELECT * FROM content ORDER BY $orderBy LIMIT 10",
+        'Películas populares' => "SELECT * FROM content WHERE type = 'movie' ORDER BY $orderBy LIMIT 10",
+        'Series populares' => "SELECT * FROM content WHERE type = 'series' ORDER BY $orderBy LIMIT 10"
+    ];
+    
+    foreach ($categories as $category => $query) {
+        try {
+            $stmt = $db->prepare($query);
+            $stmt->execute();
+            $content_data[$category] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error obteniendo contenido para $category: " . $e->getMessage());
+            $content_data[$category] = [];
+        }
+    }
+    
+} catch (Exception $e) {
+    error_log("Error general en dashboard: " . $e->getMessage());
+    $featured_content = null;
+    $content_data = [];
 }
 
-// Datos de ejemplo para el dashboard
-$featuredContent = [
-    'title' => 'Stranger Things',
-    'description' => 'Cuando un niño desaparece, su madre, un jefe de policía y sus amigos deben enfrentar fuerzas terroríficas para recuperarlo.',
-    'image' => '/placeholder.svg?height=600&width=1200&text=Stranger+Things'
-];
-
-$contentRows = [
-    [
-        'title' => 'Tendencias ahora',
-        'items' => [
-            ['title' => 'The Witcher', 'image' => '/placeholder.svg?height=300&width=200&text=The+Witcher'],
-            ['title' => 'Peaky Blinders', 'image' => '/placeholder.svg?height=300&width=200&text=Peaky+Blinders'],
-            ['title' => 'Walking Dead', 'image' => '/placeholder.svg?height=300&width=200&text=Walking+Dead'],
-            ['title' => 'Red Notice', 'image' => '/placeholder.svg?height=300&width=200&text=Red+Notice'],
-            ['title' => 'Manifest', 'image' => '/placeholder.svg?height=300&width=200&text=Manifest'],
-            ['title' => 'Dahmer', 'image' => '/placeholder.svg?height=300&width=200&text=Dahmer']
-        ]
-    ],
-    [
-        'title' => 'Populares en Netflix',
-        'items' => [
-            ['title' => 'Lucifer', 'image' => '/placeholder.svg?height=300&width=200&text=Lucifer'],
-            ['title' => 'Flash', 'image' => '/placeholder.svg?height=300&width=200&text=Flash'],
-            ['title' => 'MIB International', 'image' => '/placeholder.svg?height=300&width=200&text=MIB'],
-            ['title' => 'La Crue', 'image' => '/placeholder.svg?height=300&width=200&text=La+Crue'],
-            ['title' => 'Miraculous', 'image' => '/placeholder.svg?height=300&width=200&text=Miraculous'],
-            ['title' => 'Cobra Kai', 'image' => '/placeholder.svg?height=300&width=200&text=Cobra+Kai']
-        ]
-    ],
-    [
-        'title' => 'Mi lista',
-        'items' => [
-            ['title' => 'Downton Abbey', 'image' => '/placeholder.svg?height=300&width=200&text=Downton+Abbey'],
-            ['title' => 'Purple Hearts', 'image' => '/placeholder.svg?height=300&width=200&text=Purple+Hearts'],
-            ['title' => 'The Midnight Club', 'image' => '/placeholder.svg?height=300&width=200&text=Midnight+Club'],
-            ['title' => 'Tous en Scene', 'image' => '/placeholder.svg?height=300&width=200&text=Tous+en+Scene'],
-            ['title' => 'Athena', 'image' => '/placeholder.svg?height=300&width=200&text=Athena'],
-            ['title' => 'American Girl', 'image' => '/placeholder.svg?height=300&width=200&text=American+Girl']
-        ]
-    ]
-];
+// Obtener información del usuario de forma segura
+$user_name = $_SESSION['user_name'] ?? $_SESSION['email'] ?? 'Usuario';
+$is_admin = $_SESSION['is_admin'] ?? false;
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netflix</title>
+    <title>Netflix - Inicio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -65,52 +76,10 @@ $contentRows = [
         }
 
         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
             background: #141414;
             color: white;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
             overflow-x: hidden;
-            position: relative;
-        }
-
-        /* Fondo animado de Netflix */
-        .netflix-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url('assets/images/netflix-background.jpg');
-            background-size: cover;
-            background-position: center;
-            animation: slowZoom 25s ease-in-out infinite alternate, parallaxMove 35s ease-in-out infinite;
-            z-index: -1;
-        }
-
-        @keyframes slowZoom {
-            0% {
-                transform: scale(1);
-            }
-            100% {
-                transform: scale(1.08);
-            }
-        }
-
-        @keyframes parallaxMove {
-            0% {
-                background-position: center center;
-            }
-            25% {
-                background-position: 15% center;
-            }
-            50% {
-                background-position: center 15%;
-            }
-            75% {
-                background-position: 85% center;
-            }
-            100% {
-                background-position: center 85%;
-            }
         }
 
         /* Header */
@@ -128,8 +97,7 @@ $contentRows = [
         }
 
         .netflix-header.scrolled {
-            background-color: rgba(20, 20, 20, 0.95);
-            backdrop-filter: blur(10px);
+            background-color: #141414;
         }
 
         .header-left {
@@ -140,6 +108,9 @@ $contentRows = [
 
         .netflix-logo {
             height: 25px;
+            color: #e50914;
+            font-size: 24px;
+            font-weight: bold;
         }
 
         .main-nav {
@@ -166,61 +137,67 @@ $contentRows = [
             gap: 20px;
         }
 
-        .search-icon, .notifications-icon {
-            font-size: 18px;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-
-        .search-icon:hover, .notifications-icon:hover {
-            color: #b3b3b3;
-        }
-
-        .profile-menu {
+        .user-info {
             display: flex;
             align-items: center;
-            gap: 8px;
-            cursor: pointer;
+            gap: 10px;
+            color: #e5e5e5;
         }
 
-        .profile-avatar {
-            width: 32px;
-            height: 32px;
+        .admin-badge {
+            background: #e50914;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 8px 16px;
             border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #f40612;
         }
 
         /* Hero Section */
         .hero-section {
-            height: 56.25vw;
-            min-height: 600px;
-            max-height: 800px;
-            background: linear-gradient(77deg, rgba(0,0,0,.6), transparent 85%);
+            position: relative;
+            height: 100vh;
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.8)), 
+                        url('/placeholder.svg?height=600&width=1200&text=Netflix');
+            background-size: cover;
+            background-position: center;
             display: flex;
             align-items: center;
-            position: relative;
-            z-index: 1;
+            padding-left: 4rem;
         }
 
         .hero-content {
-            padding: 0 4%;
-            max-width: 50%;
-            position: relative;
+            max-width: 500px;
             z-index: 2;
         }
 
         .hero-title {
-            font-size: 3rem;
+            font-size: 4rem;
             font-weight: 700;
             margin-bottom: 1rem;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
         }
 
         .hero-description {
-            font-size: 1.4rem;
-            font-weight: 400;
-            line-height: 1.3;
-            margin-bottom: 1.5rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-size: 1.2rem;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
 
         .hero-buttons {
@@ -228,73 +205,61 @@ $contentRows = [
             gap: 1rem;
         }
 
-        .btn-play {
-            background-color: white;
-            color: black;
+        .btn-play, .btn-info {
+            padding: 1rem 2rem;
             border: none;
-            padding: 0.75rem 2rem;
-            font-size: 1.1rem;
-            font-weight: 700;
             border-radius: 4px;
+            font-size: 1.1rem;
+            font-weight: 600;
             cursor: pointer;
-            display: flex;
+            text-decoration: none;
+            display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+        }
+
+        .btn-play {
+            background: white;
+            color: black;
         }
 
         .btn-play:hover {
-            background-color: rgba(255,255,255,0.75);
-            transform: scale(1.05);
+            background: rgba(255,255,255,0.8);
         }
 
         .btn-info {
-            background-color: rgba(109, 109, 110, 0.7);
+            background: rgba(109,109,110,0.7);
             color: white;
-            border: none;
-            padding: 0.75rem 2rem;
-            font-size: 1.1rem;
-            font-weight: 700;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s;
-            backdrop-filter: blur(10px);
         }
 
         .btn-info:hover {
-            background-color: rgba(109, 109, 110, 0.4);
-            transform: scale(1.05);
+            background: rgba(109,109,110,0.4);
         }
 
-        /* Content Sections */
         .content-sections {
-            margin-top: -150px;
+            padding: 2rem 4rem;
+            margin-top: -200px;
             position: relative;
-            z-index: 2;
-            padding: 0 4%;
-            background: linear-gradient(transparent, rgba(20, 20, 20, 0.8) 50%, #141414);
+            z-index: 3;
         }
 
         .content-row {
             margin-bottom: 3rem;
         }
 
-        .content-row h2 {
+        .row-title {
             font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
             color: #e5e5e5;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
 
         .content-slider {
             display: flex;
-            gap: 0.25rem;
+            gap: 0.5rem;
             overflow-x: auto;
-            padding: 10px 0;
+            padding-bottom: 1rem;
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
@@ -304,174 +269,193 @@ $contentRows = [
         }
 
         .content-item {
-            flex: 0 0 auto;
-            width: 200px;
-            position: relative;
+            min-width: 250px;
+            height: 140px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
             cursor: pointer;
             transition: transform 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
         }
 
         .content-item:hover {
             transform: scale(1.05);
-            z-index: 3;
         }
 
         .content-item img {
             width: 100%;
-            height: 300px;
+            height: 100%;
             object-fit: cover;
-            border-radius: 4px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
-        .content-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(transparent, rgba(0,0,0,0.9));
-            padding: 1rem;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            border-radius: 0 0 4px 4px;
+        .content-placeholder {
+            text-align: center;
+            color: #999;
         }
 
-        .content-item:hover .content-overlay {
-            opacity: 1;
+        .content-placeholder i {
+            font-size: 2rem;
+            margin-bottom: 10px;
         }
 
-        .content-overlay h3 {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .content-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .content-actions button {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 2px solid #808080;
-            background: rgba(42, 42, 42, 0.8);
+        .admin-panel-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #e50914;
             color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 50%;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(5px);
+            font-size: 1.2rem;
+            z-index: 1001;
+            transition: background 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
 
-        .content-actions button:hover {
-            border-color: white;
-            transform: scale(1.1);
-            background: rgba(255, 255, 255, 0.2);
+        .admin-panel-btn:hover {
+            background: #f40612;
+        }
+
+        .success-message {
+            background: #2e7d32;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 4rem;
+            text-align: center;
         }
 
         @media (max-width: 768px) {
-            .header-left {
-                gap: 20px;
-            }
-            
-            .main-nav {
-                display: none;
-            }
-            
-            .hero-content {
-                max-width: 80%;
+            .hero-section {
+                padding-left: 2rem;
             }
             
             .hero-title {
-                font-size: 2rem;
+                font-size: 2.5rem;
             }
             
-            .hero-description {
-                font-size: 1rem;
+            .content-sections {
+                padding: 2rem;
             }
             
             .content-item {
-                width: 150px;
+                min-width: 200px;
+                height: 120px;
             }
             
-            .content-item img {
-                height: 225px;
+            .success-message {
+                margin: 20px 2rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="netflix-background"></div>
-    
     <!-- Header -->
     <header class="netflix-header" id="netflixHeader">
         <div class="header-left">
-            <img src="assets/images/netflix-logo.png" alt="Netflix" class="netflix-logo">
+            <div class="netflix-logo">NETFLIX</div>
             <nav class="main-nav">
                 <a href="dashboard.php" class="active">Inicio</a>
-                <a href="series.php">Series</a>
                 <a href="movies.php">Películas</a>
+                <a href="series.php">Series</a>
                 <a href="my-list.php">Mi lista</a>
             </nav>
         </div>
         
         <div class="header-right">
-            <div class="search-icon">🔍</div>
-            <div class="notifications-icon">🔔</div>
-            
-            <div class="profile-menu">
-                <img src="assets/images/avatars/<?php echo $_SESSION['profile_avatar'] ?? 'avatar1.png'; ?>" 
-                     alt="<?php echo $_SESSION['profile_name'] ?? 'Perfil'; ?>" 
-                     class="profile-avatar">
-                <span>▼</span>
+            <div class="user-info">
+                <span>Bienvenido, <?php echo htmlspecialchars($user_name); ?></span>
+                <?php if ($is_admin): ?>
+                    <span class="admin-badge">ADMIN</span>
+                <?php endif; ?>
             </div>
+            <a href="logout.php" class="logout-btn">Cerrar sesión</a>
         </div>
     </header>
-    
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="hero-content">
-            <h1 class="hero-title"><?php echo $featuredContent['title']; ?></h1>
-            <p class="hero-description"><?php echo $featuredContent['description']; ?></p>
-            
-            <div class="hero-buttons">
-                <button class="btn-play">
-                    ▶ Reproducir
-                </button>
-                <button class="btn-info">
-                    ℹ Más información
-                </button>
-            </div>
-        </div>
-    </section>
-    
-    <!-- Content Sections -->
-    <div class="content-sections">
-        <?php foreach ($contentRows as $row): ?>
-        <section class="content-row">
-            <h2><?php echo $row['title']; ?></h2>
-            <div class="content-slider">
-                <?php foreach ($row['items'] as $item): ?>
-                    <div class="content-item">
-                        <img src="<?php echo $item['image']; ?>" alt="<?php echo $item['title']; ?>">
-                        <div class="content-overlay">
-                            <h3><?php echo $item['title']; ?></h3>
-                            <div class="content-actions">
-                                <button title="Reproducir">▶</button>
-                                <button title="Agregar a Mi Lista">+</button>
-                                <button title="Me gusta">👍</button>
-                            </div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </section>
-        <?php endforeach; ?>
+
+    <?php if ($is_admin): ?>
+    <button class="admin-panel-btn" onclick="window.location.href='admin-dashboard.php'" title="Panel de Administración">
+        <i class="fas fa-cog"></i>
+    </button>
+    <?php endif; ?>
+
+    <div class="success-message">
+        <strong>¡Bienvenido a Netflix!</strong> Has iniciado sesión correctamente.
     </div>
-    
+
+    <div class="hero-section">
+        <div class="hero-content">
+            <?php if ($featured_content): ?>
+                <h1 class="hero-title"><?php echo htmlspecialchars($featured_content['title']); ?></h1>
+                <p class="hero-description"><?php echo htmlspecialchars(substr($featured_content['description'] ?? 'Contenido destacado', 0, 200)); ?></p>
+                <div class="hero-buttons">
+                    <a href="content-details.php?id=<?php echo $featured_content['id']; ?>" class="btn-play">
+                        <i class="fas fa-play"></i> Reproducir
+                    </a>
+                    <a href="content-details.php?id=<?php echo $featured_content['id']; ?>" class="btn-info">
+                        <i class="fas fa-info-circle"></i> Más información
+                    </a>
+                </div>
+            <?php else: ?>
+                <h1 class="hero-title">Bienvenido a Netflix</h1>
+                <p class="hero-description">Disfruta de películas y series ilimitadas. Explora nuestro catálogo completo.</p>
+                <div class="hero-buttons">
+                    <a href="movies.php" class="btn-play">
+                        <i class="fas fa-film"></i> Ver Películas
+                    </a>
+                    <a href="series.php" class="btn-info">
+                        <i class="fas fa-tv"></i> Ver Series
+                    </a>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="content-sections">
+        <?php foreach ($content_data as $category => $items): ?>
+            <?php if (!empty($items)): ?>
+                <div class="content-row">
+                    <h2 class="row-title"><?php echo htmlspecialchars($category); ?></h2>
+                    <div class="content-slider">
+                        <?php foreach ($items as $item): ?>
+                            <div class="content-item" onclick="goToContent(<?php echo $item['id']; ?>)">
+                                <?php if (!empty($item['poster_url'])): ?>
+                                    <img src="<?php echo htmlspecialchars($item['poster_url']); ?>" alt="<?php echo htmlspecialchars($item['title']); ?>">
+                                <?php else: ?>
+                                    <div class="content-placeholder">
+                                        <i class="fas fa-<?php echo $item['type'] === 'movie' ? 'film' : 'tv'; ?>"></i>
+                                        <div><?php echo htmlspecialchars($item['title']); ?></div>
+                                        <small><?php echo ucfirst($item['type']); ?> • <?php echo $item['release_year'] ?? 'N/A'; ?></small>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+        <?php endforeach; ?>
+        
+        <?php if (empty(array_filter($content_data))): ?>
+            <div class="content-row">
+                <h2 class="row-title">Contenido</h2>
+                <div style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-film" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                    <p>No hay contenido disponible en este momento.</p>
+                    <?php if ($is_admin): ?>
+                        <p><a href="admin-dashboard.php" style="color: #e50914;">Agregar contenido desde el panel de administración</a></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+
     <script>
         // Header scroll effect
         window.addEventListener('scroll', function() {
@@ -482,38 +466,10 @@ $contentRows = [
                 header.classList.remove('scrolled');
             }
         });
-        
-        // Slider horizontal con mouse
-        document.querySelectorAll('.content-slider').forEach(slider => {
-            let isDown = false;
-            let startX;
-            let scrollLeft;
-            
-            slider.addEventListener('mousedown', (e) => {
-                isDown = true;
-                startX = e.pageX - slider.offsetLeft;
-                scrollLeft = slider.scrollLeft;
-                slider.style.cursor = 'grabbing';
-            });
-            
-            slider.addEventListener('mouseleave', () => {
-                isDown = false;
-                slider.style.cursor = 'grab';
-            });
-            
-            slider.addEventListener('mouseup', () => {
-                isDown = false;
-                slider.style.cursor = 'grab';
-            });
-            
-            slider.addEventListener('mousemove', (e) => {
-                if (!isDown) return;
-                e.preventDefault();
-                const x = e.pageX - slider.offsetLeft;
-                const walk = (x - startX) * 2;
-                slider.scrollLeft = scrollLeft - walk;
-            });
-        });
+
+        function goToContent(id) {
+            window.location.href = `content-details.php?id=${id}`;
+        }
     </script>
 </body>
 </html>

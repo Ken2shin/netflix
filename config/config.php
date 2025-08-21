@@ -1,84 +1,94 @@
 <?php
-// Iniciar sesión si no está iniciada
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
 // Configuración de la base de datos
 define('DB_HOST', 'localhost');
 define('DB_PORT', '3306');
 define('DB_NAME', 'netflix1');
 define('DB_USER', 'root');
-define('DB_PASS', ''); // Contraseña vacía para XAMPP/WAMP por defecto
+define('DB_PASS', '');
 
-// Configuración general
-define('SITE_URL', 'http://localhost/streamflixnetflixclone2');
-define('SITE_NAME', 'Netflix Clone');
-define('MAX_PROFILES_PER_USER', 5);
+// Configuración de la aplicación
+define('APP_NAME', 'Netflix Clone');
+define('APP_URL', 'http://localhost');
 
-// Configuración de errores
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../logs/error.log');
-
-// Funciones auxiliares
-function sanitize($data) {
-    return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8');
+// Configuración de sesión
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-function redirect($url) {
-    if (!headers_sent()) {
-        header("Location: " . $url);
-        exit();
-    } else {
-        echo "<script>window.location.href = '$url';</script>";
+// Función para verificar si el usuario está autenticado
+function isAuthenticated() {
+    return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+}
+
+// Función para verificar si el usuario es administrador
+function isAdmin() {
+    return isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1;
+}
+
+// Función para requerir autenticación
+function requireLogin() {
+    if (!isAuthenticated()) {
+        header('Location: login.php');
         exit();
     }
 }
 
-function isLoggedIn() {
-    return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+// Función para requerir perfil (simplificada)
+function requireProfile() {
+    requireLogin();
+    // Por ahora solo verificamos que esté logueado
+    // En el futuro se puede expandir para verificar perfil específico
 }
 
+// Función para limpiar datos de entrada
+function sanitizeInput($data) {
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data);
+    return $data;
+}
+
+// Función para validar email
 function isValidEmail($email) {
     return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 }
 
-function generateCSRFToken() {
-    if (!isset($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION['csrf_token'];
+// Función para generar hash de contraseña
+function hashPassword($password) {
+    return password_hash($password, PASSWORD_DEFAULT);
 }
 
-function verifyCSRFToken($token) {
-    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+// Función para verificar contraseña
+function verifyPassword($password, $hash) {
+    return password_verify($password, $hash);
 }
 
-function getCurrentUser() {
-    if (!isLoggedIn()) {
-        return null;
-    }
-    
-    return [
-        'id' => $_SESSION['user_id'],
-        'name' => $_SESSION['user_name'] ?? '',
-        'email' => $_SESSION['user_email'] ?? '',
-        'is_admin' => $_SESSION['is_admin'] ?? false
-    ];
+// Función para redirigir
+function redirect($url) {
+    header("Location: $url");
+    exit();
 }
 
-function requireAuth() {
-    if (!isLoggedIn()) {
-        redirect('login.php');
+// Función para mostrar errores en desarrollo
+function showError($message) {
+    error_log($message);
+    if (defined('DEBUG') && DEBUG) {
+        echo "<div style='background: #f44336; color: white; padding: 10px; margin: 10px; border-radius: 4px;'>Error: $message</div>";
     }
 }
 
-function requireAdmin() {
-    requireAuth();
-    if (!$_SESSION['is_admin']) {
-        redirect('index.php');
-    }
+// Configuración de zona horaria
+date_default_timezone_set('America/Mexico_City');
+
+// Configuración de errores
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // No mostrar errores en producción
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/../logs/error.log');
+
+// Crear directorio de logs si no existe
+$logDir = __DIR__ . '/../logs';
+if (!is_dir($logDir)) {
+    mkdir($logDir, 0755, true);
 }
 ?>

@@ -18,117 +18,73 @@ class Database {
     
     private function connect() {
         try {
-            // Intentar diferentes configuraciones de conexión
-            $configs = [
-                // Configuración 1: Sin contraseña (XAMPP/WAMP por defecto)
-                [
-                    'host' => DB_HOST,
-                    'port' => DB_PORT,
-                    'user' => DB_USER,
-                    'pass' => '',
-                    'dbname' => DB_NAME
-                ],
-                // Configuración 2: Con contraseña vacía explícita
-                [
-                    'host' => DB_HOST,
-                    'port' => DB_PORT,
-                    'user' => DB_USER,
-                    'pass' => null,
-                    'dbname' => DB_NAME
-                ],
-                // Configuración 3: Puerto estándar 3306
-                [
-                    'host' => DB_HOST,
-                    'port' => '3306',
-                    'user' => DB_USER,
-                    'pass' => '',
-                    'dbname' => DB_NAME
-                ]
+            $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+            
+            $options = [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
             ];
             
-            $lastError = '';
+            $this->connection = new PDO($dsn, DB_USER, DB_PASS, $options);
             
-            foreach ($configs as $config) {
-                try {
-                    $dsn = "mysql:host={$config['host']};port={$config['port']};dbname={$config['dbname']};charset=utf8mb4";
-                    
-                    $options = [
-                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                        PDO::ATTR_EMULATE_PREPARES => false,
-                        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
-                    ];
-                    
-                    $this->connection = new PDO($dsn, $config['user'], $config['pass'], $options);
-                    
-                    // Si llegamos aquí, la conexión fue exitosa
-                    error_log("Conexión exitosa con configuración: Host={$config['host']}, Puerto={$config['port']}, Usuario={$config['user']}");
-                    break;
-                    
-                } catch (PDOException $e) {
-                    $lastError = $e->getMessage();
-                    continue;
-                }
-            }
+            // Solo crear tablas si no existen - SIN insertar datos automáticamente
+            $this->createTablesIfNotExist();
             
-            if ($this->connection === null) {
-                throw new Exception("No se pudo conectar con ninguna configuración. Último error: " . $lastError);
-            }
-            
-            // Verificar que la base de datos existe y crear tablas si es necesario
-            $this->initializeDatabase();
-            
-        } catch (Exception $e) {
+        } catch (PDOException $e) {
             error_log("Error de conexión a la base de datos: " . $e->getMessage());
             throw new Exception("Error de conexión a la base de datos: " . $e->getMessage());
         }
     }
     
-    private function initializeDatabase() {
+    private function createTablesIfNotExist() {
         try {
-            // Crear tabla users si no existe
-            $sql = "CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                email VARCHAR(255) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                subscription_type ENUM('basic', 'standard', 'premium') DEFAULT 'basic',
-                is_admin BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            )";
-            $this->connection->exec($sql);
+            // Verificar si la tabla users existe y obtener su estructura
+            $stmt = $this->connection->query("SHOW TABLES LIKE 'users'");
+            $tableExists = $stmt->rowCount() > 0;
             
-            // Crear tabla profiles si no existe
-            $sql = "CREATE TABLE IF NOT EXISTS profiles (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NOT NULL,
-                name VARCHAR(100) NOT NULL,
-                avatar VARCHAR(255) DEFAULT 'avatar1.png',
-                is_kids BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )";
-            $this->connection->exec($sql);
+            if (!$tableExists) {
+                // Crear tabla users con estructura básica
+                $sql = "CREATE TABLE users (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    email VARCHAR(100) UNIQUE NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    is_admin BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )";
+                $this->connection->exec($sql);
+            }
             
-            // Crear usuario admin por defecto si no existe
-            $stmt = $this->connection->prepare("SELECT COUNT(*) FROM users WHERE email = ?");
-            $stmt->execute(['admin@netflix.com']);
+            // Verificar si la tabla content existe
+            $stmt = $this->connection->query("SHOW TABLES LIKE 'content'");
+            $contentTableExists = $stmt->rowCount() > 0;
             
-            if ($stmt->fetchColumn() == 0) {
-                $hashedPassword = password_hash('admin123', PASSWORD_DEFAULT);
-                $stmt = $this->connection->prepare("INSERT INTO users (email, password, subscription_type, is_admin) VALUES (?, ?, ?, ?)");
-                $stmt->execute(['admin@netflix.com', $hashedPassword, 'premium', 1]);
-                
-                $userId = $this->connection->lastInsertId();
-                
-                // Crear perfil para admin
-                $stmt = $this->connection->prepare("INSERT INTO profiles (user_id, name, avatar) VALUES (?, ?, ?)");
-                $stmt->execute([$userId, 'Admin', 'avatar1.png']);
+            if (!$contentTableExists) {
+                // Crear tabla content con estructura básica
+                $sql = "CREATE TABLE content (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    title VARCHAR(200) NOT NULL,
+                    description TEXT,
+                    type ENUM('movie', 'series') NOT NULL,
+                    genre VARCHAR(100),
+                    release_year INT,
+                    duration INT,
+                    rating VARCHAR(10) DEFAULT 'PG',
+                    poster_url VARCHAR(500),
+                    backdrop_url VARCHAR(500),
+                    video_url VARCHAR(500),
+                    is_featured BOOLEAN DEFAULT FALSE,
+                    is_trending BOOLEAN DEFAULT FALSE,
+                    view_count INT DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )";
+                $this->connection->exec($sql);
             }
             
         } catch (PDOException $e) {
-            error_log("Error inicializando base de datos: " . $e->getMessage());
-            // No lanzar excepción aquí para permitir que la aplicación continúe
+            // Si hay error creando tablas, continuar sin fallar
+            error_log("Error creando tablas: " . $e->getMessage());
         }
     }
     
@@ -147,6 +103,27 @@ class Database {
             return false;
         }
     }
+    
+    // Método para verificar si una columna existe en una tabla
+    public function columnExists($table, $column) {
+        try {
+            $stmt = $this->connection->prepare("SHOW COLUMNS FROM `$table` LIKE ?");
+            $stmt->execute([$column]);
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+    
+    // Método para obtener las columnas de una tabla
+    public function getTableColumns($table) {
+        try {
+            $stmt = $this->connection->query("SHOW COLUMNS FROM `$table`");
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        } catch (PDOException $e) {
+            return [];
+        }
+    }
 }
 
 // Función global para obtener la conexión
@@ -162,6 +139,26 @@ function testDatabaseConnection() {
     } catch (Exception $e) {
         error_log("Error probando conexión: " . $e->getMessage());
         return false;
+    }
+}
+
+// Función para verificar si una columna existe
+function columnExists($table, $column) {
+    try {
+        $db = Database::getInstance();
+        return $db->columnExists($table, $column);
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+// Función para obtener columnas de una tabla
+function getTableColumns($table) {
+    try {
+        $db = Database::getInstance();
+        return $db->getTableColumns($table);
+    } catch (Exception $e) {
+        return [];
     }
 }
 ?>
