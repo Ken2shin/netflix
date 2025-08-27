@@ -1,0 +1,42 @@
+php_value upload_max_filesize 4096M
+php_value post_max_size 4096M
+php_value max_execution_time 3600
+php_value max_input_time 3600
+php_value memory_limit 1024M
+
+# Para servidores nginx, estas directivas pueden no funcionar
+# En ese caso, contacta a tu proveedor de hosting para aumentar:
+# client_max_body_size 4096M; en la configuración de nginx
+
+RewriteEngine On
+
+# Permitir archivos de video y imagen
+<FilesMatch "\.(mp4|webm|ogg|avi|mov|wmv|flv|m4v|mkv|jpg|jpeg|png|webp)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+<IfModule mod_fcgid.c>
+    FcgidMaxRequestLen 4294967296
+</IfModule>
+
+<IfModule mod_security.c>
+    SecRequestBodyLimit 4294967296
+    SecRequestBodyNoFilesLimit 4294967296
+</IfModule>
+
+# Configuración de seguridad básica
+<Files ".htaccess">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Prevenir acceso directo a archivos PHP de configuración
+<FilesMatch "^(config|database)\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header set Connection keep-alive
+</IfModule>

@@ -4,277 +4,348 @@ require_once 'config/database.php';
 
 requireProfile();
 
-$database = new Database();
-$db = $database->getConnection();
+$currentUser = getCurrentUser();
+$currentProfile = getCurrentProfile();
 
-// Obtener géneros para el filtro
-$sql = "SELECT * FROM genres ORDER BY name";
-$stmt = $db->prepare($sql);
-$stmt->execute();
-$genres = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Filtros
-$genre_filter = $_GET['genre'] ?? '';
-$search_filter = $_GET['search'] ?? '';
-
-// Construir consulta
-$where_conditions = ["type = 'series'"];
-$params = [];
-
-if ($genre_filter) {
-    $where_conditions[] = "id IN (SELECT content_id FROM content_genres WHERE genre_id = :genre_id)";
-    $params[':genre_id'] = $genre_filter;
+try {
+    $conn = getConnection();
+    $stmt = $conn->prepare("SELECT * FROM content WHERE type = 'series' ORDER BY created_at DESC");
+    $stmt->execute();
+    $series = $stmt->fetchAll();
+} catch (Exception $e) {
+    error_log("Error en series.php: " . $e->getMessage());
+    $series = [];
 }
-
-if ($search_filter) {
-    $where_conditions[] = "(title LIKE :search OR description LIKE :search)";
-    $params[':search'] = '%' . $search_filter . '%';
-}
-
-$where_clause = implode(' AND ', $where_conditions);
-
-$sql = "SELECT * FROM content WHERE $where_clause ORDER BY title ASC";
-$stmt = $db->prepare($sql);
-$stmt->execute($params);
-$series = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Series - Netflix</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/netflix.css">
+    <title>Netflix - Series</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            background: #141414;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #141414;
             color: white;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             padding-top: 80px;
         }
-
-        .page-header {
-            padding: 2rem 4rem;
-            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.3));
+        
+        .header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            padding: 15px 4%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+        
+        .netflix-logo {
+            height: 25px;
+        }
+        
+        .main-nav {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .main-nav a {
+            color: #e5e5e5;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 400;
+            transition: color 0.4s;
+        }
+        
+        .main-nav a:hover,
+        .main-nav a.active {
+            color: #b3b3b3;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .profile-menu {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .profile-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(0,0,0,0.9);
+            border: 1px solid #333;
+            border-radius: 4px;
+            min-width: 160px;
+            display: none;
+            z-index: 1001;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+        }
+        
+        .dropdown-menu a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            font-size: 13px;
+            transition: background-color 0.3s;
+        }
+        
+        .dropdown-menu a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        .page-header {
+            padding: 2rem 4%;
+            text-align: center;
+        }
+        
         .page-title {
             font-size: 2.5rem;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 1rem;
         }
-
-        .filters {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .filter-group label {
-            font-size: 0.9rem;
-            color: #ccc;
-        }
-
-        .filter-select, .filter-input {
-            padding: 0.5rem;
-            background: #333;
-            border: 1px solid #555;
-            color: white;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .filter-select:focus, .filter-input:focus {
-            outline: none;
-            border-color: #e50914;
-        }
-
-        .filter-btn {
-            background: #e50914;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            align-self: end;
-        }
-
-        .filter-btn:hover {
-            background: #f40612;
-        }
-
-        .content-grid {
+        
+        .series-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 2rem;
-            padding: 2rem 4rem;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            padding: 0 4%;
+            margin-bottom: 4rem;
         }
-
-        .content-card {
-            background: #222;
-            border-radius: 8px;
+        
+        .series-card {
+            position: relative;
+            border-radius: 4px;
             overflow: hidden;
             transition: transform 0.3s ease;
             cursor: pointer;
         }
-
-        .content-card:hover {
+        
+        .series-card:hover {
             transform: scale(1.05);
         }
-
-        .content-poster {
+        
+        .series-poster {
             width: 100%;
-            height: 350px;
+            height: 300px;
             object-fit: cover;
             background: #333;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-
-        .content-info {
-            padding: 1rem;
+        
+        .series-poster img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
-
-        .content-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .content-meta {
-            color: #ccc;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .content-description {
-            color: #999;
-            font-size: 0.8rem;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 4rem 2rem;
+        
+        .poster-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
             color: #666;
         }
-
-        .no-results i {
-            font-size: 4rem;
+        
+        .series-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            padding: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .series-card:hover .series-overlay {
+            opacity: 1;
+        }
+        
+        .series-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .series-meta {
+            font-size: 0.8rem;
+            color: #b3b3b3;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #8c8c8c;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.5rem;
             margin-bottom: 1rem;
         }
-
+        
+        .empty-state p {
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .empty-state a {
+            background: #e50914;
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .empty-state a:hover {
+            background: #f40612;
+        }
+        
         @media (max-width: 768px) {
+            .header-left {
+                gap: 20px;
+            }
+            
+            .main-nav {
+                display: none;
+            }
+            
             .page-header {
-                padding: 2rem;
+                padding: 2rem 2%;
             }
             
-            .content-grid {
-                padding: 2rem;
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                gap: 1rem;
+            .series-grid {
+                padding: 0 2%;
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
             
-            .filters {
-                flex-direction: column;
+            .series-poster {
+                height: 225px;
             }
         }
     </style>
 </head>
 <body>
-    <?php include 'views/partials/header.php'; ?>
-
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <img src="assets/images/netflix-logo.png" alt="Netflix" class="netflix-logo">
+            <nav class="main-nav">
+                <a href="dashboard.php">Inicio</a>
+                <a href="series.php" class="active">Series</a>
+                <a href="movies.php">Películas</a>
+                <a href="my-list.php">Mi lista</a>
+            </nav>
+        </div>
+        
+        <div class="header-right">
+            <div class="profile-menu">
+                <img src="assets/images/avatars/<?php echo htmlspecialchars($currentProfile['avatar']); ?>" 
+                     alt="<?php echo htmlspecialchars($currentProfile['name']); ?>" 
+                     class="profile-avatar">
+                <div class="dropdown-menu">
+                    <a href="profiles.php">Cambiar perfil</a>
+                    <a href="account.php">Mi cuenta</a>
+                    <?php if ($currentUser['is_admin']): ?>
+                        <a href="admin-dashboard.php">Panel Admin</a>
+                    <?php endif; ?>
+                    <a href="logout.php">Cerrar sesión</a>
+                </div>
+            </div>
+        </div>
+    </header>
+    
     <div class="page-header">
         <h1 class="page-title">Series</h1>
-        
-        <form method="GET" class="filters">
-            <div class="filter-group">
-                <label for="genre">Género:</label>
-                <select name="genre" id="genre" class="filter-select">
-                    <option value="">Todos los géneros</option>
-                    <?php foreach ($genres as $genre): ?>
-                        <option value="<?php echo $genre['id']; ?>" 
-                                <?php echo $genre_filter == $genre['id'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($genre['name']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label for="search">Buscar:</label>
-                <input type="text" 
-                       name="search" 
-                       id="search" 
-                       class="filter-input" 
-                       placeholder="Título o descripción..."
-                       value="<?php echo htmlspecialchars($search_filter); ?>">
-            </div>
-            
-            <button type="submit" class="filter-btn">
-                <i class="fas fa-search"></i> Filtrar
-            </button>
-        </form>
     </div>
-
-    <?php if (empty($series)): ?>
-        <div class="no-results">
-            <i class="fas fa-tv"></i>
-            <h3>No se encontraron series</h3>
-            <p>Intenta cambiar los filtros o buscar algo diferente.</p>
-        </div>
-    <?php else: ?>
-        <div class="content-grid">
-            <?php foreach ($series as $serie): ?>
-                <div class="content-card" onclick="goToContent(<?php echo $serie['id']; ?>)">
-                    <?php if ($serie['poster_url']): ?>
-                        <img src="<?php echo $serie['poster_url']; ?>" 
-                             alt="<?php echo htmlspecialchars($serie['title']); ?>" 
-                             class="content-poster">
-                    <?php else: ?>
-                        <div class="content-poster">
-                            <i class="fas fa-tv" style="font-size: 3rem; color: #666;"></i>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="content-info">
-                        <div class="content-title"><?php echo htmlspecialchars($serie['title']); ?></div>
-                        <div class="content-meta">
-                            Serie • <?php echo $serie['release_year']; ?>
-                            <?php if ($serie['rating']): ?>
-                                • ⭐ <?php echo number_format($serie['rating'], 1); ?>
+    
+    <?php if (!empty($series)): ?>
+        <div class="series-grid">
+            <?php foreach ($series as $show): ?>
+                <div class="series-card" onclick="location.href='content-details.php?id=<?php echo $show['id']; ?>'">
+                    <div class="series-poster">
+                        <?php if (!empty($show['thumbnail']) && file_exists($show['thumbnail'])): ?>
+                            <img src="<?php echo htmlspecialchars($show['thumbnail']); ?>" 
+                                 alt="<?php echo htmlspecialchars($show['title']); ?>" 
+                                 loading="lazy">
+                        <?php else: ?>
+                            <div class="poster-placeholder">
+                                <i class="fas fa-tv" style="font-size: 2rem; color: #666;"></i>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="series-overlay">
+                        <h3 class="series-title"><?php echo htmlspecialchars($show['title']); ?></h3>
+                        <div class="series-meta">
+                            <?php if (!empty($show['release_year'])): ?>
+                                <span><?php echo $show['release_year']; ?></span>
                             <?php endif; ?>
-                        </div>
-                        <div class="content-description">
-                            <?php echo htmlspecialchars($serie['description']); ?>
+                            <?php if (!empty($show['rating'])): ?>
+                                <span> • <?php echo htmlspecialchars($show['rating']); ?></span>
+                            <?php endif; ?>
+                            <span> • Serie</span>
                         </div>
                     </div>
                 </div>
             <?php endforeach; ?>
         </div>
+    <?php else: ?>
+        <div class="empty-state">
+            <h3>No hay series disponibles</h3>
+            <p>Agrega contenido desde el panel de administración</p>
+            <?php if ($currentUser['is_admin']): ?>
+                <a href="admin-dashboard.php">Ir al Panel Admin</a>
+            <?php endif; ?>
+        </div>
     <?php endif; ?>
-
+    
     <script>
-        function goToContent(id) {
-            window.location.href = `content-details.php?id=${id}`;
-        }
+        // Menú de perfil
+        document.querySelector('.profile-menu').addEventListener('click', function() {
+            this.querySelector('.dropdown-menu').classList.toggle('show');
+        });
+        
+        // Cerrar menú al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.profile-menu')) {
+                document.querySelector('.dropdown-menu').classList.remove('show');
+            }
+        });
     </script>
 </body>
 </html>

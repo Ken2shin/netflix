@@ -11,13 +11,34 @@ $error = '';
 $profiles = [];
 
 try {
-    $pdo = getConnection();
+    $db = Database::getInstance();
+    $pdo = $db->getConnection();
+    
+    // Verificar si la tabla profiles existe, si no, crearla
+    $stmt = $pdo->query("SHOW TABLES LIKE 'profiles'");
+    if ($stmt->rowCount() == 0) {
+        // Crear tabla profiles si no existe
+        $createTable = "
+            CREATE TABLE profiles (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                name VARCHAR(100) NOT NULL,
+                avatar VARCHAR(50) DEFAULT 'avatar1.png',
+                is_kids BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ";
+        $pdo->exec($createTable);
+    }
+    
+    // Obtener perfiles del usuario
     $stmt = $pdo->prepare("SELECT * FROM profiles WHERE user_id = ? ORDER BY created_at ASC");
     $stmt->execute([$_SESSION['user_id']]);
     $profiles = $stmt->fetchAll();
     
+    // Si no hay perfiles, crear uno por defecto
     if (empty($profiles)) {
-        // Si no hay perfiles, crear uno por defecto
         $stmt = $pdo->prepare("INSERT INTO profiles (user_id, name, avatar) VALUES (?, ?, ?)");
         $stmt->execute([$_SESSION['user_id'], $_SESSION['user_name'] ?? 'Usuario', 'avatar1.png']);
         
@@ -271,7 +292,8 @@ if (isset($_GET['profile_id'])) {
                 <a href="?profile_id=<?php echo $profile['id']; ?>" class="profile-item">
                     <div class="profile-avatar">
                         <img src="assets/images/avatars/<?php echo htmlspecialchars($profile['avatar']); ?>" 
-                             alt="<?php echo htmlspecialchars($profile['name']); ?>">
+                             alt="<?php echo htmlspecialchars($profile['name']); ?>"
+                             onerror="this.src='assets/images/avatars/avatar1.png'">
                     </div>
                     <div class="profile-name"><?php echo htmlspecialchars($profile['name']); ?></div>
                 </a>

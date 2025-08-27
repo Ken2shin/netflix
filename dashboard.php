@@ -2,65 +2,43 @@
 require_once 'config/config.php';
 require_once 'config/database.php';
 
-// Verificar autenticación
-requireLogin();
+requireProfile();
 
+$currentUser = getCurrentUser();
+$currentProfile = getCurrentProfile();
+
+// Obtener contenido de la base de datos
 try {
-    // Obtener conexión a la base de datos
-    $db = getConnection();
+    $conn = getConnection();
     
-    // Obtener contenido destacado de forma segura
-    $featured_content = null;
-    try {
-        // Verificar si existe la columna is_featured
-        if (columnExists('content', 'is_featured')) {
-            $sql = "SELECT * FROM content WHERE is_featured = 1 ORDER BY RAND() LIMIT 1";
-        } else {
-            $sql = "SELECT * FROM content ORDER BY RAND() LIMIT 1";
-        }
-        
-        $stmt = $db->prepare($sql);
-        $stmt->execute();
-        $featured_content = $stmt->fetch(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        error_log("Error obteniendo contenido destacado: " . $e->getMessage());
-    }
+    // Contenido destacado
+    $stmt = $conn->prepare("SELECT * FROM content WHERE is_featured = 1 ORDER BY created_at DESC LIMIT 1");
+    $stmt->execute();
+    $featuredContent = $stmt->fetch();
     
-    // Obtener contenido por categorías de forma segura
-    $content_data = [];
+    // Contenido reciente
+    $stmt = $conn->prepare("SELECT * FROM content ORDER BY created_at DESC LIMIT 20");
+    $stmt->execute();
+    $recentContent = $stmt->fetchAll();
     
-    // Verificar qué columnas existen antes de hacer las consultas
-    $hasViewCount = columnExists('content', 'view_count');
-    $orderBy = $hasViewCount ? 'view_count DESC' : 'id DESC';
+    // Películas
+    $stmt = $conn->prepare("SELECT * FROM content WHERE type = 'movie' ORDER BY created_at DESC LIMIT 20");
+    $stmt->execute();
+    $movies = $stmt->fetchAll();
     
-    $categories = [
-        'Tendencias' => "SELECT * FROM content ORDER BY $orderBy LIMIT 10",
-        'Películas populares' => "SELECT * FROM content WHERE type = 'movie' ORDER BY $orderBy LIMIT 10",
-        'Series populares' => "SELECT * FROM content WHERE type = 'series' ORDER BY $orderBy LIMIT 10"
-    ];
-    
-    foreach ($categories as $category => $query) {
-        try {
-            $stmt = $db->prepare($query);
-            $stmt->execute();
-            $content_data[$category] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error obteniendo contenido para $category: " . $e->getMessage());
-            $content_data[$category] = [];
-        }
-    }
+    // Series
+    $stmt = $conn->prepare("SELECT * FROM content WHERE type = 'series' ORDER BY created_at DESC LIMIT 20");
+    $stmt->execute();
+    $series = $stmt->fetchAll();
     
 } catch (Exception $e) {
-    error_log("Error general en dashboard: " . $e->getMessage());
-    $featured_content = null;
-    $content_data = [];
+    error_log("Error en dashboard: " . $e->getMessage());
+    $featuredContent = null;
+    $recentContent = [];
+    $movies = [];
+    $series = [];
 }
-
-// Obtener información del usuario de forma segura
-$user_name = $_SESSION['user_name'] ?? $_SESSION['email'] ?? 'Usuario';
-$is_admin = $_SESSION['is_admin'] ?? false;
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -74,50 +52,46 @@ $is_admin = $_SESSION['is_admin'] ?? false;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
-            background: #141414;
+            background-color: #141414;
             color: white;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             overflow-x: hidden;
         }
-
-        /* Header */
-        .netflix-header {
+        
+        .header {
             position: fixed;
             top: 0;
             width: 100%;
             background: linear-gradient(180deg, rgba(0,0,0,0.7) 10%, transparent);
             z-index: 1000;
-            padding: 10px 4%;
+            padding: 15px 4%;
             display: flex;
             justify-content: space-between;
             align-items: center;
             transition: background-color 0.4s;
         }
-
-        .netflix-header.scrolled {
+        
+        .header.scrolled {
             background-color: #141414;
         }
-
+        
         .header-left {
             display: flex;
             align-items: center;
             gap: 40px;
         }
-
+        
         .netflix-logo {
             height: 25px;
-            color: #e50914;
-            font-size: 24px;
-            font-weight: bold;
         }
-
+        
         .main-nav {
             display: flex;
             gap: 20px;
         }
-
+        
         .main-nav a {
             color: #e5e5e5;
             text-decoration: none;
@@ -125,337 +99,406 @@ $is_admin = $_SESSION['is_admin'] ?? false;
             font-weight: 400;
             transition: color 0.4s;
         }
-
+        
         .main-nav a:hover,
         .main-nav a.active {
             color: #b3b3b3;
         }
-
+        
         .header-right {
             display: flex;
             align-items: center;
             gap: 20px;
         }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #e5e5e5;
-        }
-
-        .admin-badge {
-            background: #e50914;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-
-        .logout-btn {
-            background: #e50914;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-
-        .logout-btn:hover {
-            background: #f40612;
-        }
-
-        /* Hero Section */
-        .hero-section {
+        
+        .profile-menu {
             position: relative;
-            height: 100vh;
-            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.8)), 
-                        url('/placeholder.svg?height=600&width=1200&text=Netflix');
+            cursor: pointer;
+        }
+        
+        .profile-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(0,0,0,0.9);
+            border: 1px solid #333;
+            border-radius: 4px;
+            min-width: 160px;
+            display: none;
+            z-index: 1001;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+        }
+        
+        .dropdown-menu a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            font-size: 13px;
+            transition: background-color 0.3s;
+        }
+        
+        .dropdown-menu a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        .main-content {
+            margin-top: 70px;
+        }
+        
+        .hero-section {
+            height: 56.25vw;
+            min-height: 600px;
+            max-height: 800px;
             background-size: cover;
             background-position: center;
             display: flex;
             align-items: center;
-            padding-left: 4rem;
+            position: relative;
         }
-
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(77deg, rgba(0,0,0,.6), transparent 85%);
+        }
+        
         .hero-content {
-            max-width: 500px;
-            z-index: 2;
+            position: relative;
+            z-index: 1;
+            padding: 0 4%;
+            max-width: 50%;
         }
-
+        
         .hero-title {
-            font-size: 4rem;
+            font-size: 3rem;
             font-weight: 700;
             margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.45);
         }
-
+        
         .hero-description {
-            font-size: 1.2rem;
-            line-height: 1.5;
-            margin-bottom: 2rem;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            font-size: 1.4rem;
+            font-weight: 400;
+            line-height: 1.3;
+            margin-bottom: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.45);
         }
-
+        
         .hero-buttons {
             display: flex;
             gap: 1rem;
         }
-
-        .btn-play, .btn-info {
-            padding: 1rem 2rem;
+        
+        .btn-play {
+            background-color: white;
+            color: black;
             border: none;
-            border-radius: 4px;
+            padding: 0.75rem 2rem;
             font-size: 1.1rem;
-            font-weight: 600;
+            font-weight: 700;
+            border-radius: 4px;
             cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
+            display: flex;
             align-items: center;
             gap: 0.5rem;
-            transition: all 0.3s ease;
+            transition: background-color 0.3s;
+            text-decoration: none;
         }
-
-        .btn-play {
-            background: white;
-            color: black;
-        }
-
+        
         .btn-play:hover {
-            background: rgba(255,255,255,0.8);
+            background-color: rgba(255,255,255,0.75);
         }
-
+        
         .btn-info {
-            background: rgba(109,109,110,0.7);
+            background-color: rgba(109, 109, 110, 0.7);
             color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.3s;
+            text-decoration: none;
         }
-
+        
         .btn-info:hover {
-            background: rgba(109,109,110,0.4);
+            background-color: rgba(109, 109, 110, 0.4);
         }
-
+        
         .content-sections {
-            padding: 2rem 4rem;
-            margin-top: -200px;
+            margin-top: -150px;
             position: relative;
-            z-index: 3;
+            z-index: 1;
+            padding: 0 4%;
         }
-
+        
         .content-row {
             margin-bottom: 3rem;
         }
-
-        .row-title {
+        
+        .content-row h2 {
             font-size: 1.4rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
             color: #e5e5e5;
         }
-
+        
         .content-slider {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.25rem;
             overflow-x: auto;
-            padding-bottom: 1rem;
+            padding: 10px 0;
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
-
+        
         .content-slider::-webkit-scrollbar {
             display: none;
         }
-
+        
         .content-item {
-            min-width: 250px;
-            height: 140px;
-            background: #333;
-            border-radius: 4px;
-            overflow: hidden;
+            flex: 0 0 auto;
+            width: 200px;
+            position: relative;
             cursor: pointer;
             transition: transform 0.3s ease;
-            position: relative;
+        }
+        
+        .content-item:hover {
+            transform: scale(1.05);
+            z-index: 2;
+        }
+        
+        .content-item img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        
+        .content-placeholder {
+            width: 100%;
+            height: 300px;
+            background: #333;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
+            color: #666;
         }
-
-        .content-item:hover {
-            transform: scale(1.05);
-        }
-
-        .content-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .content-placeholder {
+        
+        .empty-state {
             text-align: center;
-            color: #999;
+            padding: 4rem 2rem;
+            color: #8c8c8c;
         }
-
-        .content-placeholder i {
-            font-size: 2rem;
-            margin-bottom: 10px;
+        
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
         }
-
-        .admin-panel-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #e50914;
-            color: white;
-            border: none;
-            padding: 1rem;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-            z-index: 1001;
-            transition: background 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        
+        .empty-state p {
+            font-size: 1rem;
         }
-
-        .admin-panel-btn:hover {
-            background: #f40612;
-        }
-
-        .success-message {
-            background: #2e7d32;
-            color: white;
-            padding: 15px;
-            border-radius: 4px;
-            margin: 20px 4rem;
-            text-align: center;
-        }
-
+        
         @media (max-width: 768px) {
-            .hero-section {
-                padding-left: 2rem;
+            .header-left {
+                gap: 20px;
+            }
+            
+            .main-nav {
+                display: none;
+            }
+            
+            .hero-content {
+                max-width: 80%;
             }
             
             .hero-title {
-                font-size: 2.5rem;
+                font-size: 2rem;
             }
             
-            .content-sections {
-                padding: 2rem;
+            .hero-description {
+                font-size: 1rem;
             }
             
             .content-item {
-                min-width: 200px;
-                height: 120px;
+                width: 150px;
             }
             
-            .success-message {
-                margin: 20px 2rem;
+            .content-item img,
+            .content-placeholder {
+                height: 225px;
             }
         }
     </style>
 </head>
 <body>
     <!-- Header -->
-    <header class="netflix-header" id="netflixHeader">
+    <header class="header" id="netflixHeader">
         <div class="header-left">
-            <div class="netflix-logo">NETFLIX</div>
+            <img src="assets/images/netflix-logo.png" alt="Netflix" class="netflix-logo">
             <nav class="main-nav">
                 <a href="dashboard.php" class="active">Inicio</a>
-                <a href="movies.php">Películas</a>
                 <a href="series.php">Series</a>
+                <a href="movies.php">Películas</a>
                 <a href="my-list.php">Mi lista</a>
             </nav>
         </div>
         
         <div class="header-right">
-            <div class="user-info">
-                <span>Bienvenido, <?php echo htmlspecialchars($user_name); ?></span>
-                <?php if ($is_admin): ?>
-                    <span class="admin-badge">ADMIN</span>
-                <?php endif; ?>
+            <div class="profile-menu">
+                <img src="assets/images/avatars/<?php echo htmlspecialchars($currentProfile['avatar']); ?>" 
+                     alt="<?php echo htmlspecialchars($currentProfile['name']); ?>" 
+                     class="profile-avatar">
+                <div class="dropdown-menu">
+                    <a href="profiles.php">Cambiar perfil</a>
+                    <a href="account.php">Mi cuenta</a>
+                    <?php if ($currentUser['is_admin']): ?>
+                        <a href="admin-dashboard.php">Panel Admin</a>
+                    <?php endif; ?>
+                    <a href="logout.php">Cerrar sesión</a>
+                </div>
             </div>
-            <a href="logout.php" class="logout-btn">Cerrar sesión</a>
         </div>
     </header>
-
-    <?php if ($is_admin): ?>
-    <button class="admin-panel-btn" onclick="window.location.href='admin-dashboard.php'" title="Panel de Administración">
-        <i class="fas fa-cog"></i>
-    </button>
-    <?php endif; ?>
-
-    <div class="success-message">
-        <strong>¡Bienvenido a Netflix!</strong> Has iniciado sesión correctamente.
-    </div>
-
-    <div class="hero-section">
-        <div class="hero-content">
-            <?php if ($featured_content): ?>
-                <h1 class="hero-title"><?php echo htmlspecialchars($featured_content['title']); ?></h1>
-                <p class="hero-description"><?php echo htmlspecialchars(substr($featured_content['description'] ?? 'Contenido destacado', 0, 200)); ?></p>
+    
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <?php if ($featuredContent): ?>
+        <section class="hero-section" style="background-image: url('/placeholder.svg?height=600&width=1200&text=<?php echo urlencode($featuredContent['title']); ?>')">
+            <div class="hero-content">
+                <h1 class="hero-title"><?php echo htmlspecialchars($featuredContent['title']); ?></h1>
+                <p class="hero-description"><?php echo htmlspecialchars(substr($featuredContent['description'] ?? '', 0, 200)); ?>...</p>
+                
                 <div class="hero-buttons">
-                    <a href="content-details.php?id=<?php echo $featured_content['id']; ?>" class="btn-play">
+                    <a href="content-details.php?id=<?php echo $featuredContent['id']; ?>" class="btn-play">
                         <i class="fas fa-play"></i> Reproducir
                     </a>
-                    <a href="content-details.php?id=<?php echo $featured_content['id']; ?>" class="btn-info">
+                    <a href="content-details.php?id=<?php echo $featuredContent['id']; ?>" class="btn-info">
                         <i class="fas fa-info-circle"></i> Más información
                     </a>
                 </div>
-            <?php else: ?>
+            </div>
+        </section>
+        <?php else: ?>
+        <section class="hero-section" style="background-image: url('/placeholder.svg?height=600&width=1200&text=Netflix+Hero')">
+            <div class="hero-content">
                 <h1 class="hero-title">Bienvenido a Netflix</h1>
-                <p class="hero-description">Disfruta de películas y series ilimitadas. Explora nuestro catálogo completo.</p>
+                <p class="hero-description">Disfruta de películas y series ilimitadas</p>
+                
                 <div class="hero-buttons">
                     <a href="movies.php" class="btn-play">
-                        <i class="fas fa-film"></i> Ver Películas
+                        <i class="fas fa-play"></i> Explorar contenido
                     </a>
-                    <a href="series.php" class="btn-info">
-                        <i class="fas fa-tv"></i> Ver Series
-                    </a>
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <div class="content-sections">
-        <?php foreach ($content_data as $category => $items): ?>
-            <?php if (!empty($items)): ?>
-                <div class="content-row">
-                    <h2 class="row-title"><?php echo htmlspecialchars($category); ?></h2>
-                    <div class="content-slider">
-                        <?php foreach ($items as $item): ?>
-                            <div class="content-item" onclick="goToContent(<?php echo $item['id']; ?>)">
-                                <?php if (!empty($item['poster_url'])): ?>
-                                    <img src="<?php echo htmlspecialchars($item['poster_url']); ?>" alt="<?php echo htmlspecialchars($item['title']); ?>">
-                                <?php else: ?>
-                                    <div class="content-placeholder">
-                                        <i class="fas fa-<?php echo $item['type'] === 'movie' ? 'film' : 'tv'; ?>"></i>
-                                        <div><?php echo htmlspecialchars($item['title']); ?></div>
-                                        <small><?php echo ucfirst($item['type']); ?> • <?php echo $item['release_year'] ?? 'N/A'; ?></small>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
-        <?php endforeach; ?>
-        
-        <?php if (empty(array_filter($content_data))): ?>
-            <div class="content-row">
-                <h2 class="row-title">Contenido</h2>
-                <div style="text-align: center; padding: 40px; color: #999;">
-                    <i class="fas fa-film" style="font-size: 3rem; margin-bottom: 20px;"></i>
-                    <p>No hay contenido disponible en este momento.</p>
-                    <?php if ($is_admin): ?>
-                        <p><a href="admin-dashboard.php" style="color: #e50914;">Agregar contenido desde el panel de administración</a></p>
-                    <?php endif; ?>
                 </div>
             </div>
+        </section>
         <?php endif; ?>
-    </div>
-
+        
+        <!-- Secciones de contenido -->
+        <div class="content-sections">
+            <!-- Contenido reciente -->
+            <?php if (!empty($recentContent)): ?>
+            <section class="content-row">
+                <h2>Agregado recientemente</h2>
+                <div class="content-slider">
+                    <?php foreach ($recentContent as $item): ?>
+                        <div class="content-item" onclick="location.href='content-details.php?id=<?php echo $item['id']; ?>'">
+                            <?php if (!empty($item['thumbnail']) && file_exists($item['thumbnail'])): ?>
+                                <img src="<?php echo htmlspecialchars($item['thumbnail']); ?>" 
+                                     alt="<?php echo htmlspecialchars($item['title']); ?>">
+                            <?php else: ?>
+                                <div class="content-placeholder">
+                                    <i class="fas fa-film" style="font-size: 2rem;"></i>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+            <?php endif; ?>
+            
+            <!-- Películas populares -->
+            <?php if (!empty($movies)): ?>
+            <section class="content-row">
+                <h2>Películas populares</h2>
+                <div class="content-slider">
+                    <?php foreach ($movies as $movie): ?>
+                        <div class="content-item" onclick="location.href='content-details.php?id=<?php echo $movie['id']; ?>'">
+                            <?php if (!empty($movie['thumbnail']) && file_exists($movie['thumbnail'])): ?>
+                                <img src="<?php echo htmlspecialchars($movie['thumbnail']); ?>" 
+                                     alt="<?php echo htmlspecialchars($movie['title']); ?>">
+                            <?php else: ?>
+                                <div class="content-placeholder">
+                                    <i class="fas fa-film" style="font-size: 2rem;"></i>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+            <?php else: ?>
+            <section class="content-row">
+                <h2>Películas populares</h2>
+                <div class="empty-state">
+                    <h3>No hay películas disponibles</h3>
+                    <p>Agrega contenido desde el panel de administración</p>
+                </div>
+            </section>
+            <?php endif; ?>
+            
+            <!-- Series populares -->
+            <?php if (!empty($series)): ?>
+            <section class="content-row">
+                <h2>Series populares</h2>
+                <div class="content-slider">
+                    <?php foreach ($series as $show): ?>
+                        <div class="content-item" onclick="location.href='content-details.php?id=<?php echo $show['id']; ?>'">
+                            <?php if (!empty($show['thumbnail']) && file_exists($show['thumbnail'])): ?>
+                                <img src="<?php echo htmlspecialchars($show['thumbnail']); ?>" 
+                                     alt="<?php echo htmlspecialchars($show['title']); ?>">
+                            <?php else: ?>
+                                <div class="content-placeholder">
+                                    <i class="fas fa-film" style="font-size: 2rem;"></i>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+            <?php else: ?>
+            <section class="content-row">
+                <h2>Series populares</h2>
+                <div class="empty-state">
+                    <h3>No hay series disponibles</h3>
+                    <p>Agrega contenido desde el panel de administración</p>
+                </div>
+            </section>
+            <?php endif; ?>
+        </div>
+    </main>
+    
     <script>
         // Header scroll effect
         window.addEventListener('scroll', function() {
@@ -466,10 +509,18 @@ $is_admin = $_SESSION['is_admin'] ?? false;
                 header.classList.remove('scrolled');
             }
         });
-
-        function goToContent(id) {
-            window.location.href = `content-details.php?id=${id}`;
-        }
+        
+        // Menú de perfil
+        document.querySelector('.profile-menu').addEventListener('click', function() {
+            this.querySelector('.dropdown-menu').classList.toggle('show');
+        });
+        
+        // Cerrar menú al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.profile-menu')) {
+                document.querySelector('.dropdown-menu').classList.remove('show');
+            }
+        });
     </script>
 </body>
 </html>

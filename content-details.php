@@ -1,208 +1,432 @@
 <?php
-require_once 'middleware/auth.php';
-require_once 'controllers/ContentController.php';
+require_once 'config/config.php';
+require_once 'config/database.php';
 
-$contentController = new ContentController();
+requireAuth();
 
-// Obtener ID del contenido
-$contentId = $_GET['id'] ?? null;
-if (!$contentId) {
-    header('Location: /home');
-    exit;
+$content_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+if ($content_id <= 0) {
+    header('Location: dashboard.php');
+    exit();
 }
 
-// Obtener detalles del contenido
-$content = $contentController->getContentById($contentId);
-if (!$content) {
-    header('Location: /home');
-    exit;
+try {
+    $conn = getConnection();
+    
+    // Obtener detalles del contenido
+    $stmt = $conn->prepare("SELECT * FROM content WHERE id = ?");
+    $stmt->execute([$content_id]);
+    $content = $stmt->fetch();
+    
+    if (!$content) {
+        header('Location: dashboard.php');
+        exit();
+    }
+    
+    // Obtener contenido relacionado
+    $stmt = $conn->prepare("SELECT * FROM content WHERE type = ? AND id != ? ORDER BY RAND() LIMIT 6");
+    $stmt->execute([$content['type'], $content_id]);
+    $related_content = $stmt->fetchAll();
+    
+} catch (Exception $e) {
+    error_log("Error en content-details: " . $e->getMessage());
+    header('Location: dashboard.php');
+    exit();
 }
 
-// Obtener contenido relacionado
-$relatedContent = $contentController->getRelatedContent($contentId, $content['genre_id']);
-
-// Verificar si está en la lista del usuario
-$isInWatchlist = $contentController->isInWatchlist($_SESSION['profile_id'], $contentId);
-
-// Obtener progreso de visualización
-$progress = $contentController->getViewingProgress($_SESSION['profile_id'], $contentId);
-
-// Si es una serie, obtener temporadas y episodios
-$seasons = [];
-if ($content['type'] === 'series') {
-    $seasons = $contentController->getSeasonsByContentId($contentId);
-}
+$currentUser = getCurrentUser();
+$currentProfile = getCurrentProfile();
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($content['title']); ?> - StreamFlix</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/netflix.css">
-    <link rel="stylesheet" href="/assets/css/content-details.css">
+    <title><?php echo htmlspecialchars($content['title']); ?> - Netflix</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #141414;
+            color: white;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            padding: 15px 4%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+        
+        .netflix-logo {
+            height: 25px;
+        }
+        
+        .main-nav {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .main-nav a {
+            color: #e5e5e5;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 400;
+            transition: color 0.4s;
+        }
+        
+        .main-nav a:hover {
+            color: #b3b3b3;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .profile-menu {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .profile-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(0,0,0,0.9);
+            border: 1px solid #333;
+            border-radius: 4px;
+            min-width: 160px;
+            display: none;
+            z-index: 1001;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+        }
+        
+        .dropdown-menu a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            font-size: 13px;
+            transition: background-color 0.3s;
+        }
+        
+        .dropdown-menu a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        .hero-section {
+            position: relative;
+            height: 70vh;
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.8));
+            display: flex;
+            align-items: center;
+            padding: 80px 4% 0;
+        }
+        
+        .hero-content {
+            max-width: 50%;
+            z-index: 2;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        .hero-meta {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            color: #ccc;
+        }
+        
+        .hero-description {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn-play {
+            background: white;
+            color: black;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .btn-play:hover {
+            background: rgba(255,255,255,0.8);
+            color: black;
+        }
+        
+        .btn-info {
+            background: rgba(109, 109, 110, 0.7);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .btn-info:hover {
+            background: rgba(109, 109, 110, 0.4);
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 3rem 4rem 1.5rem;
+        }
+        
+        .content-row {
+            display: flex;
+            gap: 1rem;
+            padding: 0 4rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .content-row::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .content-item {
+            flex: 0 0 200px;
+            background: #222;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .content-item:hover {
+            transform: scale(1.05);
+        }
+        
+        .content-poster {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .content-poster img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s ease;
+        }
+        
+        .content-item-info {
+            padding: 1rem;
+            background: #222;
+        }
+        
+        .content-item-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: white;
+        }
+        
+        .content-item-meta {
+            font-size: 0.8rem;
+            color: #ccc;
+        }
+        
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 100px 2rem 0;
+                height: 60vh;
+            }
+            
+            .hero-content {
+                max-width: 100%;
+            }
+            
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .section-title {
+                margin: 2rem 2rem 1rem;
+            }
+            
+            .content-row {
+                padding: 0 2rem;
+            }
+            
+            .content-item {
+                flex: 0 0 150px;
+            }
+            
+            .content-poster {
+                height: 220px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <?php include 'views/partials/header.php'; ?>
-    
-    <main class="content-details">
-        <!-- Hero Section -->
-        <div class="hero-section" style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.8)), url('<?php echo htmlspecialchars($content['backdrop_image']); ?>');">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-8">
-                        <h1 class="display-4 fw-bold text-white mb-3"><?php echo htmlspecialchars($content['title']); ?></h1>
-                        <div class="content-meta mb-3">
-                            <span class="badge bg-success me-2"><?php echo $content['rating']; ?>% Coincidencia</span>
-                            <span class="text-white me-3"><?php echo $content['release_year']; ?></span>
-                            <span class="badge bg-secondary me-2"><?php echo $content['age_rating']; ?></span>
-                            <span class="text-white"><?php echo $content['duration']; ?> min</span>
-                        </div>
-                        <p class="lead text-white mb-4"><?php echo htmlspecialchars($content['description']); ?></p>
-                        
-                        <div class="action-buttons">
-                            <?php if ($content['type'] === 'movie'): ?>
-                                <a href="/play-movie?id=<?php echo $content['id']; ?>" class="btn btn-light btn-lg me-3">
-                                    <i class="fas fa-play me-2"></i>Reproducir
-                                </a>
-                            <?php else: ?>
-                                <a href="/play-episode?series_id=<?php echo $content['id']; ?>&season=1&episode=1" class="btn btn-light btn-lg me-3">
-                                    <i class="fas fa-play me-2"></i>Reproducir
-                                </a>
-                            <?php endif; ?>
-                            
-                            <button class="btn btn-outline-light btn-lg me-3" onclick="toggleWatchlist(<?php echo $content['id']; ?>)">
-                                <i class="fas fa-<?php echo $isInWatchlist ? 'check' : 'plus'; ?> me-2"></i>
-                                <?php echo $isInWatchlist ? 'En mi lista' : 'Mi lista'; ?>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <img src="assets/images/netflix-logo.png" alt="Netflix" class="netflix-logo">
+            <nav class="main-nav">
+                <a href="dashboard.php">Inicio</a>
+                <a href="series.php">Series</a>
+                <a href="movies.php">Películas</a>
+                <a href="my-list.php">Mi lista</a>
+            </nav>
         </div>
-
-        <!-- Content Info -->
-        <div class="container py-5">
-            <div class="row">
-                <div class="col-lg-8">
-                    <?php if ($content['type'] === 'series' && !empty($seasons)): ?>
-                        <!-- Episodios -->
-                        <div class="episodes-section">
-                            <h3 class="text-white mb-4">Episodios</h3>
-                            <div class="seasons-dropdown mb-4">
-                                <select class="form-select bg-dark text-white" id="seasonSelect">
-                                    <?php foreach ($seasons as $season): ?>
-                                        <option value="<?php echo $season['season_number']; ?>">
-                                            Temporada <?php echo $season['season_number']; ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            
-                            <div id="episodesList">
-                                <!-- Los episodios se cargarán dinámicamente -->
-                            </div>
-                        </div>
+        
+        <div class="header-right">
+            <div class="profile-menu">
+                <img src="assets/images/avatars/<?php echo htmlspecialchars($currentProfile['avatar']); ?>" 
+                     alt="<?php echo htmlspecialchars($currentProfile['name']); ?>" 
+                     class="profile-avatar">
+                <div class="dropdown-menu">
+                    <a href="profiles.php">Cambiar perfil</a>
+                    <a href="account.php">Mi cuenta</a>
+                    <?php if ($currentUser['is_admin']): ?>
+                        <a href="admin-dashboard.php">Panel Admin</a>
                     <?php endif; ?>
-                </div>
-                
-                <div class="col-lg-4">
-                    <div class="content-sidebar">
-                        <h5 class="text-white mb-3">Reparto</h5>
-                        <p class="text-muted"><?php echo htmlspecialchars($content['cast']); ?></p>
-                        
-                        <h5 class="text-white mb-3 mt-4">Géneros</h5>
-                        <p class="text-muted"><?php echo htmlspecialchars($content['genre_name']); ?></p>
-                        
-                        <h5 class="text-white mb-3 mt-4">Director</h5>
-                        <p class="text-muted"><?php echo htmlspecialchars($content['director']); ?></p>
-                    </div>
+                    <a href="logout.php">Cerrar sesión</a>
                 </div>
             </div>
         </div>
+    </header>
 
-        <!-- Contenido Relacionado -->
-        <?php if (!empty($relatedContent)): ?>
-        <div class="container pb-5">
-            <h3 class="text-white mb-4">Más como esto</h3>
-            <div class="row">
-                <?php foreach ($relatedContent as $related): ?>
-                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                    <div class="content-card">
-                        <a href="/content-details?id=<?php echo $related['id']; ?>">
-                            <img src="<?php echo htmlspecialchars($related['poster_image']); ?>" 
-                                 alt="<?php echo htmlspecialchars($related['title']); ?>" 
-                                 class="img-fluid rounded">
-                        </a>
-                        <h6 class="text-white mt-2"><?php echo htmlspecialchars($related['title']); ?></h6>
-                    </div>
-                </div>
-                <?php endforeach; ?>
+    <button class="back-button" onclick="history.back()">
+        <i class="fas fa-arrow-left"></i>
+    </button>
+
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title"><?php echo htmlspecialchars($content['title']); ?></h1>
+            <div class="hero-meta">
+                <i class="fas fa-film"></i> <?php echo htmlspecialchars($content['type'] === 'movie' ? 'Película' : 'Serie'); ?>
+                <?php if (!empty($content['release_year'])): ?>
+                    | <?php echo $content['release_year']; ?>
+                <?php endif; ?>
+                <?php if (!empty($content['duration'])): ?>
+                    | <?php echo $content['duration']; ?>min
+                <?php endif; ?>
+                <?php if (!empty($content['rating'])): ?>
+                    | <?php echo htmlspecialchars($content['rating']); ?>
+                <?php endif; ?>
+            </div>
+            <p class="hero-description"><?php echo htmlspecialchars($content['description']); ?></p>
+            <div class="hero-buttons">
+                <a href="play-movie.php?id=<?php echo $content_id; ?>" class="btn-play">
+                    <i class="fas fa-play"></i> Reproducir
+                </a>
+                <button class="btn-info" onclick="showMoreInfo()">
+                    <i class="fas fa-info-circle"></i> Más información
+                </button>
             </div>
         </div>
-        <?php endif; ?>
-    </main>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/assets/js/netflix.js"></script>
+    <?php if (!empty($related_content)): ?>
+        <h2 class="section-title">Contenido similar</h2>
+        <div class="content-row">
+            <?php foreach ($related_content as $item): ?>
+                <div class="content-item" onclick="location.href='content-details.php?id=<?php echo $item['id']; ?>'">
+                    <div class="content-poster">
+                        <?php 
+                        $poster_url = $item['poster_url'] ?? '/placeholder.svg?height=280&width=200';
+                        ?>
+                        
+                        <img src="<?php echo htmlspecialchars($poster_url); ?>" 
+                             alt="<?php echo htmlspecialchars($item['title']); ?>" 
+                             loading="lazy"
+                             onerror="this.src='/placeholder.svg?height=280&width=200';">
+                    </div>
+                    <div class="content-item-info">
+                        <div class="content-item-title"><?php echo htmlspecialchars($item['title']); ?></div>
+                        <div class="content-item-meta">
+                            <?php echo htmlspecialchars($item['type'] === 'movie' ? 'Película' : 'Serie'); ?> • <?php echo $item['release_year'] ?? 'N/A'; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
     <script>
-        // Función para alternar watchlist
-        function toggleWatchlist(contentId) {
-            fetch('/api/toggle-watchlist.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ content_id: contentId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                }
-            });
-        }
-
-        // Cargar episodios cuando cambie la temporada
-        document.getElementById('seasonSelect')?.addEventListener('change', function() {
-            const season = this.value;
-            const seriesId = <?php echo $content['id']; ?>;
-            
-            fetch(`/api/get-episodes.php?series_id=${seriesId}&season=${season}`)
-                .then(response => response.json())
-                .then(data => {
-                    const episodesList = document.getElementById('episodesList');
-                    episodesList.innerHTML = '';
-                    
-                    data.episodes.forEach(episode => {
-                        const episodeHtml = `
-                            <div class="episode-item mb-3 p-3 bg-dark rounded">
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <img src="${episode.thumbnail}" class="img-fluid rounded" alt="${episode.title}">
-                                    </div>
-                                    <div class="col-md-9">
-                                        <h6 class="text-white">${episode.episode_number}. ${episode.title}</h6>
-                                        <p class="text-muted small">${episode.description}</p>
-                                        <span class="text-muted small">${episode.duration} min</span>
-                                        <a href="/play-episode?series_id=${seriesId}&season=${season}&episode=${episode.episode_number}" 
-                                           class="btn btn-sm btn-outline-light ms-3">
-                                            <i class="fas fa-play me-1"></i>Reproducir
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        episodesList.innerHTML += episodeHtml;
-                    });
-                });
+        // Menú de perfil
+        document.querySelector('.profile-menu').addEventListener('click', function() {
+            this.querySelector('.dropdown-menu').classList.toggle('show');
+        });
+        
+        // Cerrar menú al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.profile-menu')) {
+                document.querySelector('.dropdown-menu').classList.remove('show');
+            }
         });
 
-        // Cargar episodios de la primera temporada al cargar la página
-        if (document.getElementById('seasonSelect')) {
-            document.getElementById('seasonSelect').dispatchEvent(new Event('change'));
+        function showMoreInfo() {
+            alert('Información adicional del contenido disponible próximamente.');
         }
     </script>
 </body>

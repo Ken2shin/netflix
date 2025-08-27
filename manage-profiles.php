@@ -5,7 +5,7 @@ require_once 'config/database.php';
 
 requireLogin();
 
-$database = new Database();
+$database = Database::getInstance();
 $profileModel = new Profile($database);
 
 $user_id = $_SESSION['user_id'];

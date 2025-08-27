@@ -1,284 +1,319 @@
 <?php
 require_once 'config/config.php';
-require_once 'middleware/auth.php';
-require_once 'controllers/AuthController.php';
+require_once 'models/Profile.php';
+require_once 'config/database.php';
 
-if (!isset($_SESSION['user_id'])) {
-    redirect('/login');
+requireLogin();
+
+$database = Database::getInstance();
+$profileModel = new Profile($database);
+
+$user_id = $_SESSION['user_id'];
+$profiles = $profileModel->findByUserId($user_id);
+
+// Verificar límite de perfiles
+if (count($profiles) >= MAX_PROFILES_PER_USER) {
+    header('Location: manage-profiles.php');
+    exit;
 }
 
 $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $authController = new AuthController();
-    $authController->addProfile();
+    $name = trim($_POST['name'] ?? '');
+    $avatar = $_POST['avatar'] ?? 'avatar1.png';
+    $is_kids = isset($_POST['is_kids']) ? 1 : 0;
+    
+    if (empty($name)) {
+        $error = 'El nombre del perfil es obligatorio';
+    } elseif (strlen($name) > 50) {
+        $error = 'El nombre no puede tener más de 50 caracteres';
+    } else {
+        // Verificar que no existe otro perfil con el mismo nombre para este usuario
+        $existing = $profileModel->findByUserIdAndName($user_id, $name);
+        if ($existing) {
+            $error = 'Ya existe un perfil con ese nombre';
+        } else {
+            if ($profileModel->create($user_id, $name, $avatar, $is_kids)) {
+                $success = 'Perfil creado correctamente';
+            } else {
+                $error = 'Error al crear el perfil';
+            }
+        }
+    }
 }
 
-$availableAvatars = [
+$avatars = [
     'avatar1.png' => 'Avatar 1',
-    'avatar2.png' => 'Avatar 2',
+    'avatar2.png' => 'Avatar 2', 
     'avatar3.png' => 'Avatar 3',
     'avatar4.png' => 'Avatar 4',
     'avatar5.png' => 'Avatar 5'
 ];
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agregar Perfil - StreamFlix</title>
+    <title>Agregar Perfil - Netflix</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/netflix-profiles.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #141414;
+            background: #141414;
             color: white;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .netflix-logo {
-            width: 167px;
-            height: 45px;
-            margin-bottom: 50px;
-        }
-
-        .add-profile-container {
-            background-color: #333;
-            padding: 60px;
-            border-radius: 4px;
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
-        }
-
-        .add-profile-title {
-            font-size: 64px;
-            font-weight: 400;
-            margin-bottom: 20px;
-        }
-
-        .add-profile-subtitle {
-            font-size: 18px;
-            color: #999;
-            margin-bottom: 40px;
-        }
-
-        .avatar-selection {
-            margin-bottom: 30px;
-        }
-
-        .avatar-selection h3 {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: white;
-        }
-
-        .avatar-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
-            justify-items: center;
-        }
-
-        .avatar-option {
-            width: 80px;
-            height: 80px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-            border: 3px solid transparent;
+            background-image: url('assets/images/netflix-background.jpg');
             background-size: cover;
             background-position: center;
+            background-attachment: fixed;
         }
-
-        .avatar-option:hover,
-        .avatar-option.selected {
+        
+        .overlay {
+            background: rgba(0, 0, 0, 0.7);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        
+        .add-profile-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .profile-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .profile-header h1 {
+            font-size: 3rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+        }
+        
+        .add-form {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 2rem;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .avatar-selection {
+            margin-bottom: 2rem;
+        }
+        
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .avatar-option {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .avatar-option input[type="radio"] {
+            display: none;
+        }
+        
+        .avatar-option img {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .avatar-option input[type="radio"]:checked + img {
+            border-color: #e50914;
             transform: scale(1.1);
-            border-color: white;
         }
-
+        
         .form-group {
-            margin-bottom: 20px;
-            text-align: left;
+            margin-bottom: 1.5rem;
         }
-
-        .form-group input[type="text"] {
-            width: 100%;
-            padding: 15px;
-            font-size: 16px;
-            background-color: #555;
-            border: 1px solid #666;
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            background: #333;
+            border: 1px solid #555;
             color: white;
+            padding: 0.8rem;
             border-radius: 4px;
+            font-size: 1rem;
         }
-
-        .form-group input[type="text"]:focus {
-            outline: none;
-            border-color: white;
+        
+        .form-control:focus {
+            background: #333;
+            border-color: #e50914;
+            color: white;
+            box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.25);
         }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            margin-bottom: 30px;
-            text-align: left;
+        
+        .form-check {
+            margin-bottom: 1rem;
         }
-
-        .checkbox-group input[type="checkbox"] {
-            margin-right: 10px;
-            transform: scale(1.5);
+        
+        .form-check-input {
+            background-color: #333;
+            border-color: #555;
         }
-
-        .checkbox-group label {
-            font-size: 16px;
-            cursor: pointer;
+        
+        .form-check-input:checked {
+            background-color: #e50914;
+            border-color: #e50914;
         }
-
-        .kids-info {
-            font-size: 14px;
-            color: #999;
-            margin-top: 10px;
-        }
-
-        .form-buttons {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-        }
-
-        .btn {
-            padding: 15px 30px;
-            font-size: 16px;
+        
+        .btn-netflix {
+            background: #e50914;
+            color: white;
             border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 500;
             cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .btn-netflix:hover {
+            background: #f40612;
+        }
+        
+        .btn-secondary {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 0.8rem 2rem;
+            border-radius: 4px;
+            font-size: 1rem;
             text-decoration: none;
             display: inline-block;
-            text-align: center;
             transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
-
-        .btn-primary {
-            background-color: #e50914;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #f40612;
-        }
-
-        .btn-secondary {
-            background-color: transparent;
-            color: #999;
-            border: 1px solid #666;
-        }
-
+        
         .btn-secondary:hover {
+            background: #555;
             color: white;
-            border-color: white;
         }
-
-        .error {
-            background-color: #e50914;
-            color: white;
-            padding: 15px;
+        
+        .alert {
+            padding: 1rem;
             border-radius: 4px;
-            margin-bottom: 20px;
+            margin-bottom: 1rem;
         }
-
-        @media (max-width: 768px) {
-            .add-profile-container {
-                padding: 40px 20px;
-            }
-            
-            .add-profile-title {
-                font-size: 48px;
-            }
-            
-            .avatar-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
+        
+        .alert-danger {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid #dc3545;
+            color: #ff6b6b;
+        }
+        
+        .alert-success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+            color: #51cf66;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
         }
     </style>
 </head>
 <body>
-    <img src="/placeholder.svg?height=45&width=167&text=NETFLIX" alt="Netflix" class="netflix-logo">
-    
-    <div class="add-profile-container">
-        <h1 class="add-profile-title">Agregar perfil</h1>
-        <p class="add-profile-subtitle">Agrega un perfil para otra persona que vea Netflix.</p>
-        
-        <?php if (!empty($error)): ?>
-            <div class="error"><?php echo htmlspecialchars($error); ?></div>
-        <?php endif; ?>
-        
-        <form method="POST" action="/add-profile">
-            <div class="avatar-selection">
-                <h3>Selecciona un avatar:</h3>
-                <div class="avatar-grid">
-                    <?php foreach ($availableAvatars as $filename => $name): ?>
-                        <div class="avatar-option" 
-                             data-avatar="<?php echo $filename; ?>"
-                             style="background-image: url('/placeholder.svg?height=80&width=80&text=<?php echo urlencode($name); ?>')">
+    <div class="overlay">
+        <div class="add-profile-container">
+            <div class="profile-header">
+                <h1>Agregar Perfil</h1>
+            </div>
+            
+            <div class="add-form">
+                <?php if ($error): ?>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> <?php echo $error; ?>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if ($success): ?>
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> <?php echo $success; ?>
+                        <br><br>
+                        <a href="manage-profiles.php" class="btn-netflix">Ver Perfiles</a>
+                    </div>
+                <?php else: ?>
+                    <form method="POST">
+                        <div class="avatar-selection">
+                            <label>Selecciona un avatar:</label>
+                            <div class="avatar-grid">
+                                <?php foreach ($avatars as $avatar_file => $avatar_name): ?>
+                                    <div class="avatar-option">
+                                        <input type="radio" 
+                                               name="avatar" 
+                                               value="<?php echo $avatar_file; ?>" 
+                                               id="avatar_<?php echo $avatar_file; ?>"
+                                               <?php echo $avatar_file === 'avatar1.png' ? 'checked' : ''; ?>>
+                                        <img src="assets/images/avatars/<?php echo $avatar_file; ?>" 
+                                             alt="<?php echo $avatar_name; ?>"
+                                             onclick="document.getElementById('avatar_<?php echo $avatar_file; ?>').checked = true;">
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
-                    <?php endforeach; ?>
-                </div>
+                        
+                        <div class="form-group">
+                            <label for="name">Nombre del perfil:</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="name" 
+                                   name="name" 
+                                   required 
+                                   maxlength="50"
+                                   placeholder="Ingresa el nombre del perfil">
+                        </div>
+                        
+                        <div class="form-check">
+                            <input type="checkbox" 
+                                   class="form-check-input" 
+                                   id="is_kids" 
+                                   name="is_kids">
+                            <label class="form-check-label" for="is_kids">
+                                Perfil para niños
+                            </label>
+                            <small class="form-text text-muted">
+                                Los perfiles para niños solo muestran contenido apropiado para menores de edad.
+                            </small>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button type="submit" class="btn-netflix">
+                                <i class="fas fa-plus"></i> Crear Perfil
+                            </button>
+                            <a href="manage-profiles.php" class="btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                <?php endif; ?>
             </div>
-            
-            <div class="form-group">
-                <input type="text" name="name" placeholder="Nombre" required maxlength="50">
-            </div>
-            
-            <div class="checkbox-group">
-                <input type="checkbox" name="is_kids" id="is_kids">
-                <label for="is_kids">¿Perfil para niños?</label>
-            </div>
-            <div class="kids-info">
-                Los perfiles para niños solo muestran series y películas apropiadas para menores de 12 años.
-            </div>
-            
-            <input type="hidden" name="avatar" value="avatar1.png">
-            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-            
-            <div class="form-buttons">
-                <button type="submit" class="btn btn-primary">Continuar</button>
-                <a href="/select-profile" class="btn btn-secondary">Cancelar</a>
-            </div>
-        </form>
+        </div>
     </div>
-
-    <script>
-        // Manejar selección de avatar
-        document.querySelectorAll('.avatar-option').forEach(option => {
-            option.addEventListener('click', function() {
-                // Remover selección anterior
-                document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
-                
-                // Agregar selección actual
-                this.classList.add('selected');
-                
-                // Actualizar campo hidden
-                const avatar = this.dataset.avatar;
-                document.querySelector('input[name="avatar"]').value = avatar;
-            });
-        });
-        
-        // Seleccionar primer avatar por defecto
-        document.querySelector('.avatar-option').classList.add('selected');
-    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

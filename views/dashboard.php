@@ -17,7 +17,9 @@ $contentRows = [
             ['title' => 'Walking Dead', 'image' => '/placeholder.svg?height=300&width=200&text=Walking+Dead'],
             ['title' => 'Red Notice', 'image' => '/placeholder.svg?height=300&width=200&text=Red+Notice'],
             ['title' => 'Manifest', 'image' => '/placeholder.svg?height=300&width=200&text=Manifest'],
-            ['title' => 'Dahmer', 'image' => '/placeholder.svg?height=300&width=200&text=Dahmer']
+            ['title' => 'Dahmer', 'image' => '/placeholder.svg?height=300&width=200&text=Dahmer'],
+            ['title' => 'Ozark', 'image' => '/placeholder.svg?height=300&width=200&text=Ozark'],
+            ['title' => 'Squid Game', 'image' => '/placeholder.svg?height=300&width=200&text=Squid+Game']
         ]
     ],
     [
@@ -28,7 +30,9 @@ $contentRows = [
             ['title' => 'MIB International', 'image' => '/placeholder.svg?height=300&width=200&text=MIB'],
             ['title' => 'La Crue', 'image' => '/placeholder.svg?height=300&width=200&text=La+Crue'],
             ['title' => 'Miraculous', 'image' => '/placeholder.svg?height=300&width=200&text=Miraculous'],
-            ['title' => 'Cobra Kai', 'image' => '/placeholder.svg?height=300&width=200&text=Cobra+Kai']
+            ['title' => 'Cobra Kai', 'image' => '/placeholder.svg?height=300&width=200&text=Cobra+Kai'],
+            ['title' => 'Money Heist', 'image' => '/placeholder.svg?height=300&width=200&text=Money+Heist'],
+            ['title' => 'Dark', 'image' => '/placeholder.svg?height=300&width=200&text=Dark']
         ]
     ],
     [
@@ -39,7 +43,22 @@ $contentRows = [
             ['title' => 'The Midnight Club', 'image' => '/placeholder.svg?height=300&width=200&text=Midnight+Club'],
             ['title' => 'Tous en Scene', 'image' => '/placeholder.svg?height=300&width=200&text=Tous+en+Scene'],
             ['title' => 'Athena', 'image' => '/placeholder.svg?height=300&width=200&text=Athena'],
-            ['title' => 'American Girl', 'image' => '/placeholder.svg?height=300&width=200&text=American+Girl']
+            ['title' => 'American Girl', 'image' => '/placeholder.svg?height=300&width=200&text=American+Girl'],
+            ['title' => 'Wednesday', 'image' => '/placeholder.svg?height=300&width=200&text=Wednesday'],
+            ['title' => 'Glass Onion', 'image' => '/placeholder.svg?height=300&width=200&text=Glass+Onion']
+        ]
+    ],
+    [
+        'title' => 'Acción y Aventura',
+        'items' => [
+            ['title' => 'Extraction', 'image' => '/placeholder.svg?height=300&width=200&text=Extraction'],
+            ['title' => '6 Underground', 'image' => '/placeholder.svg?height=300&width=200&text=6+Underground'],
+            ['title' => 'The Old Guard', 'image' => '/placeholder.svg?height=300&width=200&text=The+Old+Guard'],
+            ['title' => 'Triple Frontier', 'image' => '/placeholder.svg?height=300&width=200&text=Triple+Frontier'],
+            ['title' => 'Bird Box', 'image' => '/placeholder.svg?height=300&width=200&text=Bird+Box'],
+            ['title' => 'The Platform', 'image' => '/placeholder.svg?height=300&width=200&text=The+Platform'],
+            ['title' => 'Army of the Dead', 'image' => '/placeholder.svg?height=300&width=200&text=Army+of+the+Dead'],
+            ['title' => 'Sweet Tooth', 'image' => '/placeholder.svg?height=300&width=200&text=Sweet+Tooth']
         ]
     ]
 ];

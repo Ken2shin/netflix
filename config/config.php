@@ -1,59 +1,69 @@
 <?php
 // Configuración de la base de datos
 define('DB_HOST', 'localhost');
-define('DB_PORT', '3306');
 define('DB_NAME', 'netflix1');
 define('DB_USER', 'root');
 define('DB_PASS', '');
+define('DB_PORT', '3306');
 
 // Configuración de la aplicación
-define('APP_NAME', 'Netflix Clone');
-define('APP_URL', 'http://localhost');
+define('APP_NAME', 'StreamFlix');
+define('APP_URL', 'http://localhost:3000');
 
-// Configuración de sesión
-if (session_status() === PHP_SESSION_NONE) {
+define('MAX_PROFILES_PER_USER', 5);
+
+// Iniciar sesión
+if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Función para verificar si el usuario está autenticado
+// Función para verificar autenticación
 function isAuthenticated() {
     return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 }
 
-// Función para verificar si el usuario es administrador
-function isAdmin() {
-    return isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1;
+function isLoggedIn() {
+    return isAuthenticated();
 }
 
 // Función para requerir autenticación
-function requireLogin() {
+function requireAuth() {
     if (!isAuthenticated()) {
         header('Location: login.php');
         exit();
     }
 }
 
-// Función para requerir perfil (simplificada)
-function requireProfile() {
-    requireLogin();
-    // Por ahora solo verificamos que esté logueado
-    // En el futuro se puede expandir para verificar perfil específico
+function requireLogin() {
+    return requireAuth();
 }
 
-// Función para limpiar datos de entrada
-function sanitizeInput($data) {
-    $data = trim($data);
-    $data = stripslashes($data);
-    $data = htmlspecialchars($data);
-    return $data;
+// Función para requerir perfil
+function requireProfile() {
+    requireAuth();
+    if (!isset($_SESSION['profile_id'])) {
+        header('Location: profiles.php');
+        exit();
+    }
+}
+
+// Función para redirigir
+function redirect($url) {
+    header('Location: ' . $url);
+    exit();
+}
+
+// Función para limpiar entrada
+function sanitize($input) {
+    return htmlspecialchars(strip_tags(trim($input)));
 }
 
 // Función para validar email
 function isValidEmail($email) {
-    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+    return filter_var($email, FILTER_VALIDATE_EMAIL);
 }
 
-// Función para generar hash de contraseña
+// Función para hash de contraseña
 function hashPassword($password) {
     return password_hash($password, PASSWORD_DEFAULT);
 }
@@ -63,32 +73,71 @@ function verifyPassword($password, $hash) {
     return password_verify($password, $hash);
 }
 
-// Función para redirigir
-function redirect($url) {
-    header("Location: $url");
-    exit();
+// Función para obtener el ID del usuario actual
+function getCurrentUserId() {
+    if (!isAuthenticated()) {
+        return null;
+    }
+    return $_SESSION['user_id'] ?? null;
 }
 
-// Función para mostrar errores en desarrollo
-function showError($message) {
-    error_log($message);
-    if (defined('DEBUG') && DEBUG) {
-        echo "<div style='background: #f44336; color: white; padding: 10px; margin: 10px; border-radius: 4px;'>Error: $message</div>";
+function isAdmin() {
+    if (!isAuthenticated()) {
+        return false;
+    }
+    
+    try {
+        $user = getCurrentUser();
+        return $user && isset($user['is_admin']) && $user['is_admin'];
+    } catch (Exception $e) {
+        error_log("Error checking admin status: " . $e->getMessage());
+        return false;
     }
 }
 
-// Configuración de zona horaria
-date_default_timezone_set('America/Mexico_City');
-
-// Configuración de errores
-error_reporting(E_ALL);
-ini_set('display_errors', 0); // No mostrar errores en producción
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../logs/error.log');
-
-// Crear directorio de logs si no existe
-$logDir = __DIR__ . '/../logs';
-if (!is_dir($logDir)) {
-    mkdir($logDir, 0755, true);
+// Función para obtener usuario actual
+function getCurrentUser() {
+    if (!isAuthenticated()) {
+        return null;
+    }
+    
+    try {
+        require_once __DIR__ . '/database.php';
+        $conn = getConnection();
+        $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log("Error getting current user: " . $e->getMessage());
+        return null;
+    }
 }
+
+// Función para obtener perfil actual
+function getCurrentProfile() {
+    if (!isset($_SESSION['profile_id'])) {
+        return ['name' => 'Usuario', 'avatar' => 'avatar1.png'];
+    }
+    
+    try {
+        require_once __DIR__ . '/database.php';
+        $conn = getConnection();
+        $stmt = $conn->prepare("SELECT * FROM profiles WHERE id = ?");
+        $stmt->execute([$_SESSION['profile_id']]);
+        $profile = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $profile ?: ['name' => 'Usuario', 'avatar' => 'avatar1.png'];
+    } catch (Exception $e) {
+        return ['name' => 'Usuario', 'avatar' => 'avatar1.png'];
+    }
+}
+
+// Función para requerir administrador
+function requireAdmin() {
+    requireAuth();
+    if (!isAdmin()) {
+        header('Location: dashboard.php');
+        exit();
+    }
+}
+
 ?>

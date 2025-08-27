@@ -5,7 +5,16 @@ require_once 'config/database.php';
 
 requireLogin();
 
-$database = new Database();
+try {
+    $database = Database::getInstance();
+    if (!$database) {
+        throw new Exception('No se pudo conectar a la base de datos');
+    }
+} catch (Exception $e) {
+    error_log('Database connection error in add-profile.php: ' . $e->getMessage());
+    die('Error de conexión a la base de datos. Por favor, inténtalo más tarde.');
+}
+
 $profileModel = new Profile($database);
 
 $user_id = $_SESSION['user_id'];

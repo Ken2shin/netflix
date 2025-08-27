@@ -1,0 +1,22 @@
+{
+  "name": "streamflix/netflix-clone",
+  "description": "Netflix clone with PHP backend and WebSocket support",
+  "type": "project",
+  "require": {
+    "php": ">=7.4",
+    "ratchet/pawl": "^0.4",
+    "ratchet/rfc6455": "^1.4",
+    "ratchet/socket-io": "^0.4",
+    "react/socket": "^1.12"
+  },
+  "autoload": {
+    "psr-4": {
+      "StreamFlix\\": "src/"
+    }
+  },
+  "scripts": {
+    "start": "php start-server.php",
+    "websocket": "php websocket/upload-server.php",
+    "install-deps": "composer install --no-dev --optimize-autoloader"
+  }
+}

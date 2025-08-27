@@ -15,11 +15,20 @@
             id="videoPlayer" 
             class="video-player"
             <?php if($data['type'] === 'movie'): ?>
-                src="uploads/videos/<?php echo $data['content']['video_url']; ?>"
+                <?php if($data['content']['video_url']): ?>
+                    src="uploads/videos/<?php echo $data['content']['video_url']; ?>"
+                <?php else: ?>
+                    src="/placeholder.mp4?title=<?php echo urlencode($data['content']['title']); ?>"
+                <?php endif; ?>
             <?php else: ?>
-                src="uploads/videos/<?php echo $data['episode']['video_url']; ?>"
+                <?php if($data['episode']['video_url']): ?>
+                    src="uploads/videos/<?php echo $data['episode']['video_url']; ?>"
+                <?php else: ?>
+                    src="/placeholder.mp4?title=<?php echo urlencode($data['episode']['title']); ?>"
+                <?php endif; ?>
             <?php endif; ?>
             preload="metadata"
+            crossorigin="anonymous"
         ></video>
         
         <!-- Loading Spinner -->
@@ -116,7 +125,13 @@
         <?php if($data['type'] === 'episode' && $data['nextEpisode']): ?>
             <div class="next-episode-preview" id="nextEpisodePreview">
                 <div class="preview-content">
-                    <img src="uploads/thumbnails/<?php echo $data['nextEpisode']['thumbnail']; ?>" alt="Siguiente episodio">
+                    <?php if($data['nextEpisode']['thumbnail']): ?>
+                        <img src="uploads/thumbnails/<?php echo $data['nextEpisode']['thumbnail']; ?>" alt="Siguiente episodio">
+                    <?php else: ?>
+                        <div class="placeholder-thumbnail">
+                            <i class="fas fa-play"></i>
+                        </div>
+                    <?php endif; ?>
                     <div class="preview-info">
                         <h3>Siguiente episodio</h3>
                         <p>T<?php echo $data['nextEpisode']['season_number']; ?>:E<?php echo $data['nextEpisode']['episode_number']; ?> 
@@ -171,7 +186,13 @@
                 <div class="suggestions-grid">
                     <?php foreach($data['similar'] as $item): ?>
                         <div class="suggestion-item" onclick="goToContent(<?php echo $item['id']; ?>)">
-                            <img src="uploads/thumbnails/<?php echo $item['thumbnail']; ?>" alt="<?php echo htmlspecialchars($item['title']); ?>">
+                            <?php if($item['thumbnail']): ?>
+                                <img src="uploads/thumbnails/<?php echo $item['thumbnail']; ?>" alt="<?php echo htmlspecialchars($item['title']); ?>">
+                            <?php else: ?>
+                                <div class="placeholder-thumbnail">
+                                    <i class="fas fa-film"></i>
+                                </div>
+                            <?php endif; ?>
                             <div class="suggestion-info">
                                 <h4><?php echo htmlspecialchars($item['title']); ?></h4>
                                 <p><?php echo $item['release_year']; ?> • <?php echo $item['rating']; ?></p>

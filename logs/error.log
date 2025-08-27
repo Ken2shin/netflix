@@ -199,3 +199,100 @@ Stack trace:
 #2 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\admin-dashboard.php(6): AdminController->showDashboard()
 #3 {main}
   thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\middleware\auth.php on line 7
+[20-Aug-2025 18:49:07 America/Mexico_City] PHP Fatal error:  Cannot redeclare requireProfile() (previously declared in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php:37) in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\middleware\auth.php on line 43
+[20-Aug-2025 18:49:17 America/Mexico_City] PHP Fatal error:  Cannot redeclare requireProfile() (previously declared in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php:37) in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\middleware\auth.php on line 43
+[20-Aug-2025 18:49:56 America/Mexico_City] PHP Fatal error:  Cannot redeclare requireProfile() (previously declared in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php:37) in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\middleware\auth.php on line 43
+[20-Aug-2025 18:50:18 America/Mexico_City] PHP Fatal error:  Cannot redeclare requireProfile() (previously declared in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php:37) in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\middleware\auth.php on line 43
+[20-Aug-2025 18:50:39 America/Mexico_City] PHP Fatal error:  Cannot redeclare requireProfile() (previously declared in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\config\config.php:37) in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\middleware\auth.php on line 43
+[20-Aug-2025 19:16:35 America/Mexico_City] Error agregando contenido: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'genre' in 'field list'
+[20-Aug-2025 19:22:14 America/Mexico_City] Error agregando contenido: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'genre' in 'field list'
+[20-Aug-2025 19:22:45 America/Mexico_City] Error agregando contenido: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'genre' in 'field list'
+[20-Aug-2025 19:35:34 America/Mexico_City] PHP Warning:  Undefined array key "genre" in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php on line 295
+[20-Aug-2025 19:35:46 America/Mexico_City] PHP Warning:  Undefined array key "genre" in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php on line 295
+[20-Aug-2025 19:37:16 America/Mexico_City] PHP Warning:  Undefined array key "genre" in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php on line 295
+[20-Aug-2025 19:59:26 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to private Database::__construct() from global scope in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php:7
+Stack trace:
+#0 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php on line 7
+[20-Aug-2025 19:59:29 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to private Database::__construct() from global scope in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php:7
+Stack trace:
+#0 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php on line 7
+[20-Aug-2025 19:59:30 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to private Database::__construct() from global scope in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php:7
+Stack trace:
+#0 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php on line 7
+[20-Aug-2025 19:59:36 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to private Database::__construct() from global scope in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php:7
+Stack trace:
+#0 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php on line 7
+[20-Aug-2025 20:02:19 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to private Database::__construct() from global scope in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php:7
+Stack trace:
+#0 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php on line 7
+[20-Aug-2025 20:02:24 America/Mexico_City] PHP Warning:  Undefined array key "profile_id" in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\my-list.php on line 17
+[20-Aug-2025 20:08:29 America/Mexico_City] PHP Warning:  Undefined array key "profile_id" in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\my-list.php on line 17
+[20-Aug-2025 20:08:42 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to undefined function getCurrentUserName() in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php:51
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\content-details.php(277): include()
+#1 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php on line 51
+[20-Aug-2025 20:08:49 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to undefined function getCurrentUserName() in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php:51
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\content-details.php(277): include()
+#1 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php on line 51
+[20-Aug-2025 20:09:59 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to undefined function getCurrentUserName() in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php:51
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\content-details.php(277): include()
+#1 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php on line 51
+[20-Aug-2025 20:10:06 America/Mexico_City] Tabla genres no encontrada: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'netflix1.genres' doesn't exist
+[20-Aug-2025 20:10:06 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to undefined function getCurrentUserName() in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php:51
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php(230): include()
+#1 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php on line 51
+[20-Aug-2025 20:10:29 America/Mexico_City] Tabla genres no encontrada: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'netflix1.genres' doesn't exist
+[20-Aug-2025 20:10:29 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to undefined function getCurrentUserName() in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php:51
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\movies.php(230): include()
+#1 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php on line 51
+[20-Aug-2025 20:10:43 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to undefined function getCurrentUserName() in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php:51
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\content-details.php(277): include()
+#1 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php on line 51
+[20-Aug-2025 20:22:16 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to undefined function getCurrentUserName() in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php:51
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\content-details.php(277): include()
+#1 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\views\partials\header.php on line 51
+[20-Aug-2025 20:27:36 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\profiles.php:6
+Stack trace:
+#0 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\profiles.php on line 6
+[20-Aug-2025 20:27:39 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\profiles.php:6
+Stack trace:
+#0 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\profiles.php on line 6
+[20-Aug-2025 20:27:40 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\profiles.php:6
+Stack trace:
+#0 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\profiles.php on line 6
+[20-Aug-2025 20:44:25 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to private Database::__construct() from scope Content in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\models\Content.php:27
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\content-details.php(16): Content->__construct()
+#1 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\models\Content.php on line 27
+[20-Aug-2025 20:44:27 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to private Database::__construct() from scope Content in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\models\Content.php:27
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\content-details.php(16): Content->__construct()
+#1 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\models\Content.php on line 27
+[20-Aug-2025 20:47:34 America/Mexico_City] PHP Fatal error:  Uncaught Error: Call to private Database::__construct() from scope Content in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\models\Content.php:27
+Stack trace:
+#0 C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\content-details.php(16): Content->__construct()
+#1 {main}
+  thrown in C:\Users\EMANUELCLEMENTEMARTI\Downloads\streamflixnetflixclone2\models\Content.php on line 27

@@ -2,98 +2,97 @@
 require_once 'config/config.php';
 require_once 'config/database.php';
 
+// Verificar autenticación
 if (!isAuthenticated()) {
-    redirect('login.php');
+    header('Location: login.php');
+    exit();
 }
 
-$userId = getCurrentUserId();
+$userId = $_SESSION['user_id'];
 $message = '';
-$messageType = '';
+$error = '';
 
-// Obtener datos del usuario actual
 try {
-    $db = getConnection();
-    $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
+    $pdo = getConnection();
+    
+    // Obtener datos del usuario
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
     $stmt->execute([$userId]);
     $user = $stmt->fetch();
     
     if (!$user) {
-        redirect('login.php');
+        header('Location: login.php');
+        exit();
     }
-} catch (Exception $e) {
-    error_log("Error obteniendo usuario: " . $e->getMessage());
-    redirect('dashboard.php');
-}
-
-// Procesar formulario
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        $name = sanitize($_POST['name'] ?? '');
-        $email = sanitize($_POST['email'] ?? '');
+    
+    // Procesar formulario
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $name = trim($_POST['name'] ?? '');
+        $email = trim($_POST['email'] ?? '');
         $currentPassword = $_POST['current_password'] ?? '';
         $newPassword = $_POST['new_password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
         
-        // Validaciones básicas
-        if (empty($name) || empty($email)) {
-            throw new Exception('El nombre y email son obligatorios');
+        // Validaciones
+        if (empty($name)) {
+            $error = 'El nombre es requerido';
+        } elseif (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error = 'Email válido es requerido';
+        } elseif ($email !== $user['email']) {
+            // Verificar si el email ya existe
+            $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+            $stmt->execute([$email, $userId]);
+            if ($stmt->fetch()) {
+                $error = 'Este email ya está en uso';
+            }
         }
         
-        if (!isValidEmail($email)) {
-            throw new Exception('El email no es válido');
-        }
-        
-        // Verificar si el email ya existe (excepto el actual)
-        $stmt = $db->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
-        $stmt->execute([$email, $userId]);
-        if ($stmt->fetch()) {
-            throw new Exception('Este email ya está en uso');
-        }
-        
-        // Si se quiere cambiar la contraseña
+        // Si se quiere cambiar contraseña
         if (!empty($newPassword)) {
             if (empty($currentPassword)) {
-                throw new Exception('Debes ingresar tu contraseña actual');
+                $error = 'Debes ingresar tu contraseña actual';
+            } elseif (!password_verify($currentPassword, $user['password'])) {
+                $error = 'Contraseña actual incorrecta';
+            } elseif (strlen($newPassword) < 6) {
+                $error = 'La nueva contraseña debe tener al menos 6 caracteres';
+            } elseif ($newPassword !== $confirmPassword) {
+                $error = 'Las contraseñas no coinciden';
             }
-            
-            if (!password_verify($currentPassword, $user['password'])) {
-                throw new Exception('La contraseña actual es incorrecta');
-            }
-            
-            if (strlen($newPassword) < 6) {
-                throw new Exception('La nueva contraseña debe tener al menos 6 caracteres');
-            }
-            
-            if ($newPassword !== $confirmPassword) {
-                throw new Exception('Las contraseñas nuevas no coinciden');
-            }
-            
-            // Actualizar con nueva contraseña
-            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-            $stmt = $db->prepare("UPDATE users SET name = ?, email = ?, password = ?, updated_at = NOW() WHERE id = ?");
-            $stmt->execute([$name, $email, $hashedPassword, $userId]);
-        } else {
-            // Actualizar sin cambiar contraseña
-            $stmt = $db->prepare("UPDATE users SET name = ?, email = ?, updated_at = NOW() WHERE id = ?");
-            $stmt->execute([$name, $email, $userId]);
         }
         
-        // Actualizar sesión
-        $_SESSION['user_name'] = $name;
-        $_SESSION['user_email'] = $email;
-        
-        $message = 'Perfil actualizado correctamente';
-        $messageType = 'success';
-        
-        // Recargar datos del usuario
-        $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
-        $stmt->execute([$userId]);
-        $user = $stmt->fetch();
-        
-    } catch (Exception $e) {
-        $message = $e->getMessage();
-        $messageType = 'error';
+        if (empty($error)) {
+            try {
+                if (!empty($newPassword)) {
+                    // Actualizar con nueva contraseña
+                    $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                    $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, password = ?, updated_at = NOW() WHERE id = ?");
+                    $stmt->execute([$name, $email, $hashedPassword, $userId]);
+                } else {
+                    // Actualizar sin cambiar contraseña
+                    $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, updated_at = NOW() WHERE id = ?");
+                    $stmt->execute([$name, $email, $userId]);
+                }
+                
+                // Actualizar sesión
+                $_SESSION['user_name'] = $name;
+                
+                $message = 'Perfil actualizado correctamente';
+                
+                // Recargar datos del usuario
+                $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+                $stmt->execute([$userId]);
+                $user = $stmt->fetch();
+                
+            } catch (PDOException $e) {
+                $error = 'Error al actualizar el perfil';
+                error_log("Error actualizando perfil: " . $e->getMessage());
+            }
+        }
     }
+    
+} catch (Exception $e) {
+    error_log("Error en edit-profile: " . $e->getMessage());
+    $error = 'Error interno del servidor';
 }
 ?>
 
@@ -104,15 +103,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Perfil - Netflix</title>
     <link rel="stylesheet" href="assets/css/netflix.css">
-    <link rel="stylesheet" href="assets/css/netflix-profiles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        body {
+            background: #141414;
+            color: white;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
         .edit-profile-container {
             max-width: 600px;
             margin: 100px auto;
             padding: 40px;
             background: rgba(0, 0, 0, 0.8);
-            border-radius: 10px;
+            border-radius: 8px;
         }
         
         .edit-profile-header {
@@ -127,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
         
         .form-group label {
@@ -139,9 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .form-group input {
             width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 5px;
+            padding: 12px;
+            border: 1px solid #333;
+            border-radius: 4px;
             background: #333;
             color: white;
             font-size: 16px;
@@ -149,11 +155,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .form-group input:focus {
             outline: none;
-            background: #444;
+            border-color: #e50914;
         }
         
         .password-section {
-            border-top: 1px solid #444;
+            border-top: 1px solid #333;
             padding-top: 30px;
             margin-top: 30px;
         }
@@ -163,22 +169,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 20px;
         }
         
-        .form-actions {
+        .btn-group {
             display: flex;
             gap: 15px;
-            margin-top: 40px;
+            margin-top: 30px;
         }
         
         .btn {
-            padding: 15px 30px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 5px;
+            border-radius: 4px;
             font-size: 16px;
             cursor: pointer;
             text-decoration: none;
             display: inline-block;
             text-align: center;
-            transition: all 0.3s ease;
         }
         
         .btn-primary {
@@ -186,22 +191,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: white;
         }
         
-        .btn-primary:hover {
-            background: #f40612;
-        }
-        
         .btn-secondary {
             background: #333;
             color: white;
         }
         
-        .btn-secondary:hover {
-            background: #444;
+        .btn:hover {
+            opacity: 0.8;
         }
         
         .alert {
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 4px;
             margin-bottom: 20px;
         }
         
@@ -219,7 +220,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
-    <?php include 'views/partials/header.php'; ?>
+    <!-- Comentar header temporalmente para debug -->
+    <!-- <?php include 'views/partials/header.php'; ?> -->
     
     <div class="edit-profile-container">
         <div class="edit-profile-header">
@@ -228,24 +230,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         
         <?php if ($message): ?>
-        <div class="alert alert-<?php echo $messageType; ?>">
-            <?php echo htmlspecialchars($message); ?>
-        </div>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <?php echo htmlspecialchars($message); ?>
+            </div>
         <?php endif; ?>
         
-        <form method="POST">
+        <?php if ($error): ?>
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <?php echo htmlspecialchars($error); ?>
+            </div>
+        <?php endif; ?>
+        
+        <form method="POST" action="">
             <div class="form-group">
                 <label for="name">Nombre completo</label>
                 <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($user['name']); ?>" required>
             </div>
             
             <div class="form-group">
-                <label for="email">Correo electrónico</label>
+                <label for="email">Email</label>
                 <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
             </div>
             
             <div class="password-section">
-                <h3>Cambiar contraseña</h3>
+                <h3>Cambiar Contraseña</h3>
                 <p style="color: #999; margin-bottom: 20px;">Deja estos campos vacíos si no quieres cambiar tu contraseña</p>
                 
                 <div class="form-group">
@@ -264,42 +274,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
             
-            <div class="form-actions">
+            <div class="btn-group">
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Guardar cambios
+                    <i class="fas fa-save"></i>
+                    Guardar Cambios
                 </button>
                 <a href="dashboard.php" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancelar
+                    <i class="fas fa-times"></i>
+                    Cancelar
                 </a>
             </div>
         </form>
     </div>
     
-    <script>
-        // Validación del formulario
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const newPassword = document.getElementById('new_password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
-            const currentPassword = document.getElementById('current_password').value;
-            
-            if (newPassword && !currentPassword) {
-                e.preventDefault();
-                alert('Debes ingresar tu contraseña actual para cambiarla');
-                return;
-            }
-            
-            if (newPassword && newPassword !== confirmPassword) {
-                e.preventDefault();
-                alert('Las contraseñas nuevas no coinciden');
-                return;
-            }
-            
-            if (newPassword && newPassword.length < 6) {
-                e.preventDefault();
-                alert('La nueva contraseña debe tener al menos 6 caracteres');
-                return;
-            }
-        });
-    </script>
+    <script src="assets/js/netflix.js"></script>
 </body>
 </html>

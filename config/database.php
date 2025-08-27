@@ -3,23 +3,11 @@ require_once __DIR__ . '/config.php';
 
 class Database {
     private static $instance = null;
-    private $connection = null;
+    private $connection;
     
     private function __construct() {
-        $this->connect();
-    }
-    
-    public static function getInstance() {
-        if (self::$instance === null) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
-    
-    private function connect() {
         try {
             $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
-            
             $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -29,69 +17,20 @@ class Database {
             
             $this->connection = new PDO($dsn, DB_USER, DB_PASS, $options);
             
-            // Solo crear tablas si no existen - SIN insertar datos automáticamente
-            $this->createTablesIfNotExist();
-            
         } catch (PDOException $e) {
-            error_log("Error de conexión a la base de datos: " . $e->getMessage());
-            throw new Exception("Error de conexión a la base de datos: " . $e->getMessage());
+            error_log("Database connection error: " . $e->getMessage());
+            die("Error de conexión a la base de datos");
         }
     }
     
-    private function createTablesIfNotExist() {
-        try {
-            // Verificar si la tabla users existe y obtener su estructura
-            $stmt = $this->connection->query("SHOW TABLES LIKE 'users'");
-            $tableExists = $stmt->rowCount() > 0;
-            
-            if (!$tableExists) {
-                // Crear tabla users con estructura básica
-                $sql = "CREATE TABLE users (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    email VARCHAR(100) UNIQUE NOT NULL,
-                    password VARCHAR(255) NOT NULL,
-                    is_admin BOOLEAN DEFAULT FALSE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )";
-                $this->connection->exec($sql);
-            }
-            
-            // Verificar si la tabla content existe
-            $stmt = $this->connection->query("SHOW TABLES LIKE 'content'");
-            $contentTableExists = $stmt->rowCount() > 0;
-            
-            if (!$contentTableExists) {
-                // Crear tabla content con estructura básica
-                $sql = "CREATE TABLE content (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    title VARCHAR(200) NOT NULL,
-                    description TEXT,
-                    type ENUM('movie', 'series') NOT NULL,
-                    genre VARCHAR(100),
-                    release_year INT,
-                    duration INT,
-                    rating VARCHAR(10) DEFAULT 'PG',
-                    poster_url VARCHAR(500),
-                    backdrop_url VARCHAR(500),
-                    video_url VARCHAR(500),
-                    is_featured BOOLEAN DEFAULT FALSE,
-                    is_trending BOOLEAN DEFAULT FALSE,
-                    view_count INT DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )";
-                $this->connection->exec($sql);
-            }
-            
-        } catch (PDOException $e) {
-            // Si hay error creando tablas, continuar sin fallar
-            error_log("Error creando tablas: " . $e->getMessage());
+    public static function getInstance() {
+        if (self::$instance === null) {
+            self::$instance = new self();
         }
+        return self::$instance;
     }
     
     public function getConnection() {
-        if ($this->connection === null) {
-            $this->connect();
-        }
         return $this->connection;
     }
     
@@ -126,39 +65,155 @@ class Database {
     }
 }
 
-// Función global para obtener la conexión
+// Función helper para obtener conexión
 function getConnection() {
     return Database::getInstance()->getConnection();
 }
 
-// Función para probar la conexión
-function testDatabaseConnection() {
-    try {
-        $db = Database::getInstance();
-        return $db->testConnection();
-    } catch (Exception $e) {
-        error_log("Error probando conexión: " . $e->getMessage());
-        return false;
-    }
-}
-
-// Función para verificar si una columna existe
-function columnExists($table, $column) {
-    try {
-        $db = Database::getInstance();
-        return $db->columnExists($table, $column);
-    } catch (Exception $e) {
-        return false;
-    }
-}
-
-// Función para obtener columnas de una tabla
 function getTableColumns($table) {
+    return Database::getInstance()->getTableColumns($table);
+}
+
+// Crear tablas si no existen
+function createTables() {
     try {
-        $db = Database::getInstance();
-        return $db->getTableColumns($table);
+        $conn = getConnection();
+        
+        // Tabla users
+        $conn->exec("CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            is_admin BOOLEAN DEFAULT FALSE,
+            subscription_plan ENUM('basico', 'normal', 'premium') DEFAULT 'basico',
+            subscription_status ENUM('active', 'inactive', 'cancelled') DEFAULT 'inactive',
+            subscription_start_date TIMESTAMP NULL,
+            subscription_end_date TIMESTAMP NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )");
+
+        // Tabla profiles
+        $conn->exec("CREATE TABLE IF NOT EXISTS profiles (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            avatar VARCHAR(255) DEFAULT 'avatar1.png',
+            is_kids BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )");
+
+        $database = Database::getInstance();
+        if (!$database->columnExists('profiles', 'is_kids')) {
+            $conn->exec("ALTER TABLE profiles ADD COLUMN is_kids BOOLEAN DEFAULT FALSE");
+        }
+
+        // Tabla content
+        $conn->exec("CREATE TABLE IF NOT EXISTS content (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            type ENUM('movie', 'series') NOT NULL,
+            genre VARCHAR(255),
+            release_year INT,
+            duration INT,
+            rating VARCHAR(10),
+            poster_url VARCHAR(255),
+            backdrop_url VARCHAR(255),
+            thumbnail VARCHAR(255),
+            video_url VARCHAR(255),
+            video_platform VARCHAR(50) DEFAULT 'direct',
+            required_plan ENUM('basico', 'normal', 'premium') DEFAULT 'basico',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+
+        $conn->exec("CREATE TABLE IF NOT EXISTS subscription_plans (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            display_name VARCHAR(100) NOT NULL,
+            price DECIMAL(10,2) NOT NULL,
+            currency VARCHAR(3) DEFAULT 'USD',
+            features TEXT,
+            max_profiles INT DEFAULT 1,
+            max_devices INT DEFAULT 1,
+            video_quality VARCHAR(20) DEFAULT 'SD',
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+
+        $conn->exec("CREATE TABLE IF NOT EXISTS payments (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            plan_name VARCHAR(50) NOT NULL,
+            amount DECIMAL(10,2) NOT NULL,
+            currency VARCHAR(3) DEFAULT 'USD',
+            payment_method VARCHAR(50) NOT NULL,
+            payment_status ENUM('pending', 'completed', 'failed', 'refunded') DEFAULT 'pending',
+            transaction_id VARCHAR(255),
+            payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )");
+
+        $conn->exec("CREATE TABLE IF NOT EXISTS video_files (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            upload_id VARCHAR(255) UNIQUE NOT NULL,
+            filename VARCHAR(255) NOT NULL,
+            original_filename VARCHAR(255) NOT NULL,
+            file_size BIGINT NOT NULL,
+            mime_type VARCHAR(100) NOT NULL,
+            file_data LONGBLOB NOT NULL,
+            upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            checksum VARCHAR(64),
+            INDEX idx_upload_id (upload_id),
+            INDEX idx_filename (filename)
+        )");
+
+        $conn->exec("CREATE TABLE IF NOT EXISTS video_chunks (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            upload_id VARCHAR(255) NOT NULL,
+            chunk_index INT NOT NULL,
+            chunk_data MEDIUMBLOB NOT NULL,
+            chunk_size INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_chunk (upload_id, chunk_index),
+            INDEX idx_upload_id (upload_id)
+        )");
+
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM subscription_plans");
+        $stmt->execute();
+        if ($stmt->fetchColumn() == 0) {
+            $conn->exec("INSERT INTO subscription_plans (name, display_name, price, features, max_profiles, max_devices, video_quality) VALUES 
+                ('basico', 'Plan Básico', 9.99, 'Acceso a contenido básico,1 perfil,1 dispositivo,Calidad SD', 1, 1, 'SD'),
+                ('normal', 'Plan Normal', 15.99, 'Acceso a todo el contenido,3 perfiles,2 dispositivos,Calidad HD', 3, 2, 'HD'),
+                ('premium', 'Plan Premium', 19.99, 'Acceso completo,5 perfiles,4 dispositivos,Calidad 4K,Descargas offline', 5, 4, '4K')");
+        }
+
+        // Insertar usuarios demo si no existen
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM users");
+        $stmt->execute();
+        if ($stmt->fetchColumn() == 0) {
+            $conn->exec("INSERT INTO users (email, password, name, is_admin, subscription_plan, subscription_status) VALUES 
+                ('admin@netflix.com', '" . password_hash('admin123', PASSWORD_DEFAULT) . "', 'Administrador', TRUE, 'premium', 'active'),
+                ('user@netflix.com', '" . password_hash('user123', PASSWORD_DEFAULT) . "', 'Usuario Demo', FALSE, 'basico', 'active')");
+        }
+
+        // Insertar contenido demo si no existe
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM content");
+        $stmt->execute();
+        if ($stmt->fetchColumn() == 0) {
+            $conn->exec("INSERT INTO content (title, description, type, genre, release_year, duration, rating, video_url, required_plan) VALUES 
+                ('Película Demo 1', 'Una película de demostración para probar el reproductor.', 'movie', 'Acción', 2023, 120, 'PG-13', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', 'basico'),
+                ('Película Demo 2', 'Otra película de demostración con contenido de prueba.', 'movie', 'Drama', 2022, 95, 'R', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', 'normal'),
+                ('Serie Demo 1', 'Una serie de demostración para probar la funcionalidad.', 'series', 'Comedia', 2023, 45, 'TV-14', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', 'premium')");
+        }
+
     } catch (Exception $e) {
-        return [];
+        error_log("Error creating tables: " . $e->getMessage());
     }
 }
+
+// Crear tablas al incluir este archivo
+createTables();
 ?>

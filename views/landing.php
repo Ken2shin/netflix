@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netflix</title>
+    <title>Netflix - Películas y series ilimitadas</title>
     <style>
         * {
             margin: 0;
@@ -13,268 +13,230 @@
 
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #000;
+            color: white;
+        }
+
+        .hero-section {
+            height: 100vh;
             background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('assets/images/netflix-background.jpg');
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
-            min-height: 100vh;
-            color: white;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 60px;
-            z-index: 10;
-        }
-
-        .logo {
-            height: 45px;
-        }
-
-        .sign-in-btn {
-            background: #e50914;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 400;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background-color 0.3s;
-        }
-
-        .sign-in-btn:hover {
-            background: #f40612;
-        }
-
-        .hero {
-            position: relative;
-            height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
-            padding: 150px 20px;
-            max-width: 950px;
-            margin: 0 auto;
-            z-index: 5;
+            position: relative;
         }
 
-        .hero-content {
-            max-width: 950px;
-        }
-
-        .hero-title {
-            font-size: 3.125rem;
-            font-weight: 900;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.45);
-        }
-
-        .hero-subtitle {
-            font-size: 1.625rem;
-            font-weight: 400;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.45);
-        }
-
-        .hero-description {
-            font-size: 1.125rem;
-            font-weight: 400;
-            margin-bottom: 2rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.45);
-        }
-
-        .cta-container {
+        .hero-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 2rem 4%;
             display: flex;
-            justify-content: center;
-            gap: 1rem;
-            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
         }
 
-        .cta-btn {
+        .netflix-logo {
+            color: #e50914;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-login {
             background: #e50914;
             color: white;
+            padding: 0.5rem 1rem;
             border: none;
-            padding: 16px 32px;
-            font-size: 1.5rem;
-            font-weight: 500;
             border-radius: 4px;
-            cursor: pointer;
             text-decoration: none;
-            transition: background-color 0.3s;
+            font-weight: 600;
+            transition: background 0.3s;
         }
 
-        .cta-btn:hover {
+        .btn-login:hover {
             background: #f40612;
         }
 
-        .features {
-            background-color: #000;
-            padding: 70px 0;
+        .btn-register {
+            background: transparent;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: 1px solid white;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
         }
 
-        .feature {
-            display: flex;
-            align-items: center;
-            max-width: 1100px;
+        .btn-register:hover {
+            background: white;
+            color: black;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            padding: 0 2rem;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .hero-description {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .cta-button {
+            background: #e50914;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+
+        .cta-button:hover {
+            background: #f40612;
+        }
+
+        .features-section {
+            padding: 4rem 4%;
+            background: #000;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 70px 45px;
-            border-bottom: 8px solid #222;
         }
 
-        .feature:nth-child(even) {
-            flex-direction: row-reverse;
-        }
-
-        .feature-text {
-            flex: 1;
-            padding: 0 3rem;
-        }
-
-        .feature-title {
-            font-size: 3.125rem;
-            font-weight: 900;
-            margin-bottom: 0.5rem;
-        }
-
-        .feature-description {
-            font-size: 1.625rem;
-            font-weight: 400;
-            color: #999;
+        .feature-item {
+            text-align: center;
+            padding: 2rem;
+            position: relative;
         }
 
         .feature-image {
-            flex: 1;
-            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 20px rgba(229, 9, 20, 0.3);
+            transition: transform 0.3s ease;
         }
 
-        .feature-image img {
-            max-width: 100%;
-            height: auto;
+        .feature-image:hover {
+            transform: scale(1.05);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: #e50914;
+            margin-bottom: 1rem;
+            display: none; /* Hide emoji icons when we have real images */
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .feature-description {
+            color: #b3b3b3;
+            line-height: 1.6;
         }
 
         @media (max-width: 768px) {
-            .header {
-                padding: 20px;
-            }
-            
             .hero-title {
-                font-size: 2rem;
+                font-size: 2.5rem;
             }
-            
+
             .hero-subtitle {
-                font-size: 1.125rem;
+                font-size: 1.2rem;
             }
-            
+
             .hero-description {
                 font-size: 1rem;
             }
-            
-            .email-signup {
-                flex-direction: column;
-                gap: 16px;
-            }
-            
-            .email-input {
-                border-radius: 4px;
-            }
-            
-            .get-started-btn {
-                border-radius: 4px;
-            }
-            
-            .feature {
-                flex-direction: column !important;
-                text-align: center;
-                padding: 40px 20px;
-            }
-            
-            .feature-text {
-                padding: 0 0 3rem 0;
-            }
-            
-            .feature-title {
-                font-size: 2rem;
-            }
-            
-            .feature-description {
-                font-size: 1.125rem;
-            }
-        }
 
-        @media (max-width: 740px) {
-            .header {
-                padding: 20px;
-            }
-            
-            .hero h1 {
-                font-size: 2rem;
-            }
-            
-            .hero h2 {
-                font-size: 1.25rem;
-            }
-            
-            .hero p {
-                font-size: 1rem;
-            }
-            
-            .cta-btn {
-                font-size: 1.125rem;
-                padding: 12px 24px;
+            .auth-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <img src="assets/images/netflix-logo.png" alt="Netflix" class="logo">
-        <a href="login.php" class="sign-in-btn">Iniciar sesión</a>
-    </div>
-    
-    <div class="hero">
-        <h1 class="hero-title">Películas y series ilimitadas y mucho más</h1>
-        <h2 class="hero-subtitle">Disfruta donde quieras. Cancela cuando quieras.</h2>
-        <p class="hero-description">¿Quieres ver Netflix ya? Ingresa tu email para crear una cuenta o reiniciar tu membresía de Netflix.</p>
-        
-        <div class="cta-container">
-            <a href="register.php" class="cta-btn">Comenzar</a>
+    <div class="hero-section">
+        <div class="hero-header">
+            <div class="netflix-logo">NETFLIX</div>
+            <div class="auth-buttons">
+                <a href="login.php" class="btn-login">Iniciar Sesión</a>
+                <a href="register.php" class="btn-register">Registrarse</a>
+            </div>
+        </div>
+
+        <div class="hero-content">
+            <h1 class="hero-title">Películas y series ilimitadas y mucho más</h1>
+            <h2 class="hero-subtitle">Disfruta donde quieras. Cancela cuando quieras.</h2>
+            <p class="hero-description">¿Quieres ver Netflix ya? Ingresa tu email para crear una cuenta o reiniciar tu membresía de Netflix.</p>
+            <a href="register.php" class="cta-button">Comenzar</a>
         </div>
     </div>
 
-    <div class="features">
-        <div class="feature">
-            <div class="feature-text">
-                <h2 class="feature-title">Disfruta en tu TV</h2>
+    <div class="features-section">
+        <div class="features-grid">
+            <div class="feature-item">
+                <img src="assets/images/netflix-tv-interface.png" alt="Disfruta en tu TV" class="feature-image">
+                <div class="feature-icon">📺</div>
+                <h3 class="feature-title">Disfruta en tu TV</h3>
                 <p class="feature-description">Ve en smart TV, PlayStation, Xbox, Chromecast, Apple TV, reproductores de Blu-ray y más.</p>
             </div>
-            <div class="feature-image">
-                <img src="/placeholder.svg?height=400&width=550&text=TV+Feature" alt="Disfruta en tu TV">
-            </div>
-        </div>
 
-        <div class="feature">
-            <div class="feature-text">
-                <h2 class="feature-title">Descarga tus series para verlas offline</h2>
+            <div class="feature-item">
+                <img src="assets/images/netflix-tablet-popcorn.png" alt="Descarga tus series para verlas offline" class="feature-image">
+                <div class="feature-icon">📱</div>
+                <h3 class="feature-title">Descarga tus series para verlas offline</h3>
                 <p class="feature-description">Guarda fácilmente tus favoritos y siempre tendrás algo para ver.</p>
             </div>
-            <div class="feature-image">
-                <img src="/placeholder.svg?height=400&width=550&text=Download+Feature" alt="Descarga series">
-            </div>
-        </div>
 
-        <div class="feature">
-            <div class="feature-text">
-                <h2 class="feature-title">Ve donde quieras</h2>
-                <p class="feature-description">Películas y series ilimitadas en tu teléfono, tablet, computadora y TV.</p>
-            </div>
-            <div class="feature-image">
-                <img src="/placeholder.svg?height=400&width=550&text=Watch+Anywhere" alt="Ve donde quieras">
+            <div class="feature-item">
+                <img src="assets/images/streaming-apps.png" alt="Ve donde quieras" class="feature-image">
+                <div class="feature-icon">👨‍👩‍👧‍👦</div>
+                <h3 class="feature-title">Ve donde quieras</h3>
+                <p class="feature-description">Transmite películas y programas de TV ilimitados en tu teléfono, tablet, laptop y TV.</p>
             </div>
         </div>
     </div>

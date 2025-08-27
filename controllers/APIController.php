@@ -1,4 +1,6 @@
 <?php
+require_once 'config/config.php';
+require_once 'config/database.php';
 require_once 'config/api.php';
 require_once 'middleware/auth.php';
 
@@ -46,8 +48,7 @@ class APIController {
     
     private function localLogin($email, $password) {
         try {
-            require_once 'config/database.php';
-            $db = new Database();
+            $db = Database::getInstance();
             $conn = $db->getConnection();
             
             $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
@@ -96,8 +97,7 @@ class APIController {
     
     private function localRegister($username, $email, $password) {
         try {
-            require_once 'config/database.php';
-            $db = new Database();
+            $db = Database::getInstance();
             $conn = $db->getConnection();
             
             // Verificar si el email ya existe
@@ -141,8 +141,7 @@ class APIController {
     
     private function getLocalMedia() {
         try {
-            require_once 'config/database.php';
-            $db = new Database();
+            $db = Database::getInstance();
             $conn = $db->getConnection();
             
             $stmt = $conn->prepare("SELECT * FROM content ORDER BY created_at DESC");
@@ -241,8 +240,7 @@ class APIController {
     
     private function getLocalMediaById($mediaId) {
         try {
-            require_once 'config/database.php';
-            $db = new Database();
+            $db = Database::getInstance();
             $conn = $db->getConnection();
             
             $stmt = $conn->prepare("SELECT * FROM content WHERE id = ?");
@@ -284,8 +282,7 @@ class APIController {
     
     private function localSearch($query) {
         try {
-            require_once 'config/database.php';
-            $db = new Database();
+            $db = Database::getInstance();
             $conn = $db->getConnection();
             
             $stmt = $conn->prepare("SELECT * FROM content WHERE title LIKE ? OR description LIKE ? ORDER BY title");
@@ -327,8 +324,7 @@ class APIController {
     
     private function getLocalWatchlist($userId) {
         try {
-            require_once 'config/database.php';
-            $db = new Database();
+            $db = Database::getInstance();
             $conn = $db->getConnection();
             
             $stmt = $conn->prepare("
@@ -363,8 +359,7 @@ class APIController {
     
     private function localAddToWatchlist($mediaId, $userId) {
         try {
-            require_once 'config/database.php';
-            $db = new Database();
+            $db = Database::getInstance();
             $conn = $db->getConnection();
             
             $stmt = $conn->prepare("INSERT IGNORE INTO watchlist (user_id, content_id, added_at) VALUES (?, ?, NOW())");
@@ -392,8 +387,7 @@ class APIController {
     
     private function localRemoveFromWatchlist($mediaId, $userId) {
         try {
-            require_once 'config/database.php';
-            $db = new Database();
+            $db = Database::getInstance();
             $conn = $db->getConnection();
             
             $stmt = $conn->prepare("DELETE FROM watchlist WHERE user_id = ? AND content_id = ?");
@@ -443,8 +437,7 @@ class APIController {
     
     private function getLocalHistory($userId) {
         try {
-            require_once 'config/database.php';
-            $db = new Database();
+            $db = Database::getInstance();
             $conn = $db->getConnection();
             
             $stmt = $conn->prepare("
@@ -481,8 +474,7 @@ class APIController {
     
     private function addToLocalHistory($userId, $mediaId) {
         try {
-            require_once 'config/database.php';
-            $db = new Database();
+            $db = Database::getInstance();
             $conn = $db->getConnection();
             
             $stmt = $conn->prepare("
