@@ -46,7 +46,11 @@ class AuthController {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_name'] = $user['name'];
                 $_SESSION['user_email'] = $user['email'];
-                $_SESSION['is_admin'] = $user['is_admin'];
+                $_SESSION['is_admin'] = (bool)$user['is_admin']; // Ensure boolean type
+                
+                if ($user['is_admin']) {
+                    error_log("Admin login successful: " . $user['email']);
+                }
                 
                 echo json_encode(['success' => true, 'message' => 'Login exitoso', 'redirect' => 'profiles.php']);
             } else {

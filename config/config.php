@@ -14,7 +14,16 @@ define('MAX_PROFILES_PER_USER', 5);
 
 // Iniciar sesión
 if (session_status() == PHP_SESSION_NONE) {
+    // Configurar parámetros de sesión antes de iniciar
+    ini_set('session.cookie_lifetime', 86400); // 24 horas
+    ini_set('session.gc_maxlifetime', 86400);
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.use_strict_mode', 1);
+    
     session_start();
+    
+    // Debug: Log session start
+    error_log("Session started. Session ID: " . session_id());
 }
 
 // Función para verificar autenticación
@@ -86,9 +95,17 @@ function isAdmin() {
         return false;
     }
     
+    if (isset($_SESSION['is_admin'])) {
+        return (bool)$_SESSION['is_admin'];
+    }
+    
     try {
         $user = getCurrentUser();
-        return $user && isset($user['is_admin']) && $user['is_admin'];
+        if ($user && isset($user['is_admin'])) {
+            $_SESSION['is_admin'] = $user['is_admin']; // Cache in session
+            return (bool)$user['is_admin'];
+        }
+        return false;
     } catch (Exception $e) {
         error_log("Error checking admin status: " . $e->getMessage());
         return false;
@@ -133,11 +150,22 @@ function getCurrentProfile() {
 
 // Función para requerir administrador
 function requireAdmin() {
-    requireAuth();
+    error_log("requireAdmin() called");
+    error_log("Session data: " . print_r($_SESSION, true));
+    
+    if (!isAuthenticated()) {
+        error_log("User not authenticated, redirecting to login");
+        header('Location: login.php');
+        exit();
+    }
+    
     if (!isAdmin()) {
+        error_log("User authenticated but not admin. User ID: " . ($_SESSION['user_id'] ?? 'none') . ", is_admin: " . ($_SESSION['is_admin'] ?? 'not set'));
         header('Location: dashboard.php');
         exit();
     }
+    
+    error_log("Admin access granted for user: " . ($_SESSION['user_email'] ?? 'unknown'));
 }
 
 ?>

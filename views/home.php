@@ -1,6 +1,7 @@
 <?php
 require_once 'middleware/auth.php';
 require_once 'controllers/APIController.php';
+require_once 'includes/image-handler.php';
 
 requireAuth();
 requireProfile();
@@ -480,8 +481,12 @@ $continueWatching = array_slice($userHistory, 0, 5);
                 <div class="content-slider">
                     <?php foreach ($continueWatching as $item): ?>
                         <div class="content-item" onclick="showInfo(<?php echo $item['id']; ?>)">
-                            <img src="<?php echo $item['poster_url'] ?? '/placeholder.svg?height=300&width=200&text=' . urlencode($item['title']); ?>" 
-                                 alt="<?php echo htmlspecialchars($item['title']); ?>">
+                            <?php 
+                            $posterUrl = force_display_poster($item, 'medium');
+                            ?>
+                            <img src="<?php echo htmlspecialchars($posterUrl); ?>" 
+                                 alt="<?php echo htmlspecialchars($item['title']); ?>"
+                                 onerror="this.src='/placeholder.svg?height=300&width=200&text=<?php echo urlencode($item['title']); ?>'">
                             <div class="content-overlay">
                                 <h3><?php echo htmlspecialchars($item['title']); ?></h3>
                                 <div class="content-actions">
@@ -502,8 +507,12 @@ $continueWatching = array_slice($userHistory, 0, 5);
                 <div class="content-slider">
                     <?php foreach ($watchlist as $item): ?>
                         <div class="content-item" onclick="showInfo(<?php echo $item['id']; ?>)">
-                            <img src="<?php echo $item['poster_url'] ?? '/placeholder.svg?height=300&width=200&text=' . urlencode($item['title']); ?>" 
-                                 alt="<?php echo htmlspecialchars($item['title']); ?>">
+                            <?php 
+                            $posterUrl = force_display_poster($item, 'medium');
+                            ?>
+                            <img src="<?php echo htmlspecialchars($posterUrl); ?>" 
+                                 alt="<?php echo htmlspecialchars($item['title']); ?>"
+                                 onerror="this.src='/placeholder.svg?height=300&width=200&text=<?php echo urlencode($item['title']); ?>'">
                             <div class="content-overlay">
                                 <h3><?php echo htmlspecialchars($item['title']); ?></h3>
                                 <div class="content-actions">
@@ -524,8 +533,12 @@ $continueWatching = array_slice($userHistory, 0, 5);
                 <div class="content-slider">
                     <?php foreach ($recommendations as $item): ?>
                         <div class="content-item" onclick="showInfo(<?php echo $item['id']; ?>)">
-                            <img src="<?php echo $item['poster_url'] ?? '/placeholder.svg?height=300&width=200&text=' . urlencode($item['title']); ?>" 
-                                 alt="<?php echo htmlspecialchars($item['title']); ?>">
+                            <?php 
+                            $posterUrl = force_display_poster($item, 'medium');
+                            ?>
+                            <img src="<?php echo htmlspecialchars($posterUrl); ?>" 
+                                 alt="<?php echo htmlspecialchars($item['title']); ?>"
+                                 onerror="this.src='/placeholder.svg?height=300&width=200&text=<?php echo urlencode($item['title']); ?>'">
                             <div class="content-overlay">
                                 <h3><?php echo htmlspecialchars($item['title']); ?></h3>
                                 <div class="content-actions">
@@ -546,8 +559,12 @@ $continueWatching = array_slice($userHistory, 0, 5);
                 <div class="content-slider">
                     <?php foreach (array_slice($movies, 0, 10) as $movie): ?>
                         <div class="content-item" onclick="showInfo(<?php echo $movie['id']; ?>)">
-                            <img src="<?php echo $movie['poster_url'] ?? '/placeholder.svg?height=300&width=200&text=' . urlencode($movie['title']); ?>" 
-                                 alt="<?php echo htmlspecialchars($movie['title']); ?>">
+                            <?php 
+                            $posterUrl = force_display_poster($movie, 'medium');
+                            ?>
+                            <img src="<?php echo htmlspecialchars($posterUrl); ?>" 
+                                 alt="<?php echo htmlspecialchars($movie['title']); ?>"
+                                 onerror="this.src='/placeholder.svg?height=300&width=200&text=<?php echo urlencode($movie['title']); ?>'">
                             <div class="content-overlay">
                                 <h3><?php echo htmlspecialchars($movie['title']); ?></h3>
                                 <div class="content-actions">
@@ -576,8 +593,12 @@ $continueWatching = array_slice($userHistory, 0, 5);
                 <div class="content-slider">
                     <?php foreach (array_slice($series, 0, 10) as $show): ?>
                         <div class="content-item" onclick="showInfo(<?php echo $show['id']; ?>)">
-                            <img src="<?php echo $show['poster_url'] ?? '/placeholder.svg?height=300&width=200&text=' . urlencode($show['title']); ?>" 
-                                 alt="<?php echo htmlspecialchars($show['title']); ?>">
+                            <?php 
+                            $posterUrl = force_display_poster($show, 'medium');
+                            ?>
+                            <img src="<?php echo htmlspecialchars($posterUrl); ?>" 
+                                 alt="<?php echo htmlspecialchars($show['title']); ?>"
+                                 onerror="this.src='/placeholder.svg?height=300&width=200&text=<?php echo urlencode($show['title']); ?>'">
                             <div class="content-overlay">
                                 <h3><?php echo htmlspecialchars($show['title']); ?></h3>
                                 <div class="content-actions">

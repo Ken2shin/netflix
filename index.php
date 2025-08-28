@@ -11,11 +11,28 @@ header('X-XSS-Protection: 1; mode=block');
 
 require_once 'config/config.php';
 require_once 'config/database.php';
+require_once 'services/OMDBService.php';
 
 // Si el usuario ya está autenticado, redirigir al dashboard
 if (isAuthenticated()) {
     header('Location: dashboard.php');
     exit();
+}
+
+// Handle OMDB search if query is provided
+$searchResults = [];
+$searchQuery = $_GET['search'] ?? '';
+
+if (!empty($searchQuery)) {
+    try {
+        $omdbService = new OMDBService();
+        $results = $omdbService->searchMovies($searchQuery);
+        if ($results && isset($results['Search'])) {
+            $searchResults = $results['Search'];
+        }
+    } catch (Exception $e) {
+        error_log("OMDB Search Error: " . $e->getMessage());
+    }
 }
 
 // Mostrar página de landing
@@ -256,6 +273,104 @@ exit;
             animation: spin 1s linear infinite;
         }
 
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .search-container form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-container input {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-container button {
+            padding: 8px 15px;
+            background: var(--netflix-red);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .search-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(20,20,20,0.95);
+            border-radius: 4px;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .search-dropdown div {
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.2s ease;
+        }
+
+        .search-dropdown img {
+            width: 40px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .search-dropdown div:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .movie-card {
+            background: rgba(40,40,40,0.8);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .movie-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .movie-card div {
+            padding: 15px;
+        }
+
+        .movie-card h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: white;
+        }
+
+        .movie-card p {
+            font-size: 14px;
+            color: var(--netflix-gray);
+        }
+
+        .movie-card p:last-child {
+            font-size: 12px;
+            color: var(--netflix-gray);
+            text-transform: capitalize;
+        }
+
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -316,13 +431,50 @@ exit;
         </nav>
         
         <div class="user-menu">
+            <a href="content-details.php?id=1" class="cta-button">
+                <i class="fas fa-play"></i> Ver ahora
+            </a>
             <img src="assets/images/avatars/avatar1.png" alt="Perfil" class="profile-avatar">
             <a href="profiles.php" style="color: white; text-decoration: none;">Cambiar perfil</a>
             <a href="logout.php" style="color: white; text-decoration: none; margin-left: 10px;">Salir</a>
         </div>
+
+        <!-- Added search functionality in header -->
+        <div class="search-container">
+            <form method="GET">
+                <input type="text" name="search" placeholder="Buscar películas..." 
+                       value="<?php echo htmlspecialchars($searchQuery); ?>">
+                <button type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
     </header>
 
     <!-- Dashboard content will be included here -->
+
+    <!-- Added search results section -->
+    <?php if (!empty($searchResults)): ?>
+    <section class="search-results">
+        <h2>
+            Resultados para "<?php echo htmlspecialchars($searchQuery); ?>"
+        </h2>
+        <div class="results-grid">
+            <?php foreach ($searchResults as $movie): ?>
+            <div class="movie-card"
+                 onclick="window.location.href='content-details.php?imdb_id=<?php echo urlencode($movie['imdbID']); ?>'">
+                <img src="<?php echo $movie['Poster'] !== 'N/A' ? htmlspecialchars($movie['Poster']) : 'assets/images/no-poster.jpg'; ?>" 
+                     alt="<?php echo htmlspecialchars($movie['Title']); ?>">
+                <div>
+                    <h3><?php echo htmlspecialchars($movie['Title']); ?></h3>
+                    <p><?php echo htmlspecialchars($movie['Year']); ?></p>
+                    <p><?php echo htmlspecialchars($movie['Type']); ?></p>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+    <?php endif; ?>
 
     <!-- Added WebSocket integration and performance optimizations -->
     <script>
@@ -594,6 +746,105 @@ exit;
             }
         }
 
+        class NetflixSearch {
+            constructor() {
+                this.searchInput = document.querySelector('input[name="search"]');
+                this.searchForm = document.querySelector('form');
+                this.setupAutoComplete();
+            }
+
+            setupAutoComplete() {
+                if (!this.searchInput) return;
+
+                let searchTimeout;
+                this.searchInput.addEventListener('input', (e) => {
+                    clearTimeout(searchTimeout);
+                    const query = e.target.value.trim();
+                    
+                    if (query.length >= 3) {
+                        searchTimeout = setTimeout(() => {
+                            this.performAutoComplete(query);
+                        }, 300);
+                    }
+                });
+            }
+
+            async performAutoComplete(query) {
+                try {
+                    const response = await fetch(`api/search-omdb.php?q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.results.length > 0) {
+                        this.showAutoCompleteResults(data.results.slice(0, 5));
+                    }
+                } catch (error) {
+                    console.error('[v0] Auto-complete search failed:', error);
+                }
+            }
+
+            showAutoCompleteResults(results) {
+                // Remove existing dropdown
+                const existingDropdown = document.querySelector('.search-dropdown');
+                if (existingDropdown) {
+                    existingDropdown.remove();
+                }
+
+                // Create new dropdown
+                const dropdown = document.createElement('div');
+                dropdown.className = 'search-dropdown';
+
+                results.forEach(movie => {
+                    const item = document.createElement('div');
+                    item.style.cssText = `
+                        padding: 10px 15px;
+                        border-bottom: 1px solid rgba(255,255,255,0.1);
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        transition: background-color 0.2s ease;
+                    `;
+                    
+                    item.innerHTML = `
+                        <img src="${movie.Poster !== 'N/A' ? movie.Poster : 'assets/images/no-poster.jpg'}" 
+                             style="width: 40px; height: 60px; object-fit: cover; border-radius: 4px;">
+                        <div>
+                            <div style="color: white; font-weight: 600;">${movie.Title}</div>
+                            <div style="color: var(--netflix-gray); font-size: 12px;">${movie.Year} • ${movie.Type}</div>
+                        </div>
+                    `;
+                    
+                    item.addEventListener('mouseenter', () => {
+                        item.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                    });
+                    
+                    item.addEventListener('mouseleave', () => {
+                        item.style.backgroundColor = 'transparent';
+                    });
+                    
+                    item.addEventListener('click', () => {
+                        window.location.href = `content-details.php?imdb_id=${movie.imdbID}`;
+                    });
+                    
+                    dropdown.appendChild(item);
+                });
+
+                // Position dropdown relative to search input
+                const searchContainer = this.searchInput.closest('.search-container');
+                if (searchContainer) {
+                    searchContainer.style.position = 'relative';
+                    searchContainer.appendChild(dropdown);
+                }
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!searchContainer.contains(e.target)) {
+                        dropdown.remove();
+                    }
+                }, { once: true });
+            }
+        }
+
         // Initialize everything when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
             console.log('[v0] Initializing Netflix application');
@@ -603,6 +854,9 @@ exit;
             
             // Initialize performance optimizations
             window.perfOptimizer = new PerformanceOptimizer();
+            
+            // Initialize search
+            window.netflixSearch = new NetflixSearch();
             
             console.log('[v0] Netflix application initialized successfully');
         });

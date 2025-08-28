@@ -50,20 +50,27 @@ try {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #141414;
-            color: white;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1d1d1f;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
         }
         
+        /* Added macOS-style design with glassmorphism effects */
         .sidebar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100vh;
-            width: 250px;
-            background: #1a1a1a;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.18);
             padding: 2rem 0;
             z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
         .sidebar-brand {
@@ -72,13 +79,17 @@ try {
         }
         
         .sidebar-brand h4 {
-            color: #e50914;
-            font-weight: 700;
+            color: #1d1d1f;
+            font-weight: 600;
+            font-size: 1.5rem;
+            margin: 0;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         
         .sidebar-nav {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
         
         .sidebar-nav li {
@@ -86,31 +97,56 @@ try {
         }
         
         .sidebar-nav a {
-            display: block;
+            display: flex;
+            align-items: center;
             padding: 1rem 2rem;
-            color: #b3b3b3;
+            color: #1d1d1f;
             text-decoration: none;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            border-radius: 0 25px 25px 0;
+            margin-right: 1rem;
+            font-weight: 500;
+        }
+        
+        .sidebar-nav a i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
         }
         
         .sidebar-nav a:hover,
         .sidebar-nav a.active {
-            background: #333;
-            color: white;
+            background: rgba(255, 255, 255, 0.3);
+            color: #1d1d1f;
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
         
         .main-content {
-            margin-left: 250px;
+            margin-left: 280px;
             padding: 2rem;
+            min-height: 100vh;
         }
         
         .top-bar {
-            background: #1a1a1a;
-            padding: 1rem 2rem;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 1.5rem 2rem;
             margin: -2rem -2rem 2rem -2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .top-bar h2 {
+            margin: 0;
+            color: #1d1d1f;
+            font-weight: 600;
+            font-size: 1.8rem;
         }
         
         .stats-grid {
@@ -121,118 +157,160 @@ try {
         }
         
         .stat-card {
-            background: #1a1a1a;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
             padding: 2rem;
-            border-radius: 8px;
+            border-radius: 20px;
             text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
         }
         
         .stat-number {
             font-size: 3rem;
             font-weight: 700;
-            color: #e50914;
+            color: #007AFF;
             margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         
         .stat-label {
             font-size: 1.1rem;
-            color: #b3b3b3;
+            color: #1d1d1f;
+            font-weight: 500;
         }
         
         .content-table {
-            background: #1a1a1a;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 20px;
             overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
         .table-header {
-            background: #333;
+            background: rgba(255, 255, 255, 0.3);
             padding: 1.5rem 2rem;
-            border-bottom: 1px solid #444;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .table-header h5 {
             margin: 0;
-            color: white;
+            color: #1d1d1f;
+            font-weight: 600;
+            font-size: 1.3rem;
         }
         
         .table {
-            color: white;
+            color: #1d1d1f;
             margin: 0;
         }
         
         .table th {
-            background: #333;
+            background: rgba(255, 255, 255, 0.2);
             border: none;
-            color: #b3b3b3;
+            color: #1d1d1f;
             font-weight: 600;
+            padding: 1rem;
         }
         
         .table td {
-            background: #1a1a1a;
+            background: transparent;
             border: none;
             vertical-align: middle;
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .btn-admin {
-            background: #e50914;
+            background: linear-gradient(135deg, #007AFF, #5856D6);
             border: none;
             color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
             text-decoration: none;
-            display: inline-block;
-            transition: background 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);
         }
         
         .btn-admin:hover {
-            background: #f40612;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.4);
             color: white;
         }
         
         .btn-admin-secondary {
-            background: #333;
-            border: none;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #1d1d1f;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
             text-decoration: none;
-            display: inline-block;
-            transition: background 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
         }
         
         .btn-admin-secondary:hover {
-            background: #555;
-            color: white;
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            color: #1d1d1f;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
         
         .content-thumbnail {
             width: 50px;
             height: 75px;
             object-fit: cover;
-            border-radius: 4px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         
         .type-badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .type-movie {
-            background: #007bff;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
             color: white;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
         }
         
         .type-series {
-            background: #28a745;
+            background: linear-gradient(135deg, #4ECDC4, #44A08D);
             color: white;
+            box-shadow: 0 2px 8px rgba(78, 205, 196, 0.3);
         }
         
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
             }
             
             .main-content {
@@ -241,6 +319,12 @@ try {
             
             .stats-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .top-bar {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
             }
         }
     </style>
@@ -256,6 +340,7 @@ try {
             <li><a href="admin-content.php"><i class="fas fa-film"></i> Gestionar Contenido</a></li>
             <li><a href="admin-add-content.php"><i class="fas fa-plus"></i> Agregar Contenido</a></li>
             <li><a href="admin-users.php"><i class="fas fa-users"></i> Usuarios</a></li>
+            <li><a href="admin-messaging.php"><i class="fas fa-envelope"></i> Mensajería</a></li>
             <li><a href="admin-statistics.php"><i class="fas fa-chart-bar"></i> Estadísticas</a></li>
         </ul>
     </div>
@@ -366,6 +451,9 @@ try {
                         <div class="d-grid gap-2">
                             <a href="admin-add-content.php" class="btn-admin">
                                 <i class="fas fa-plus"></i> Agregar Nuevo Contenido
+                            </a>
+                            <a href="admin-messaging.php" class="btn-admin-secondary">
+                                <i class="fas fa-envelope"></i> Enviar Mensaje a Usuarios
                             </a>
                             <a href="admin-content.php" class="btn-admin-secondary">
                                 <i class="fas fa-list"></i> Ver Todo el Contenido

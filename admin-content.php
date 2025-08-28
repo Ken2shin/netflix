@@ -9,7 +9,7 @@ $currentUser = getCurrentUser();
 // Obtener todo el contenido
 try {
     $conn = getConnection();
-    $stmt = $conn->prepare("SELECT * FROM content ORDER BY created_at DESC");
+    $stmt = $conn->prepare("SELECT id, title, type, release_year, rating, poster_url, thumbnail, imdb_id FROM content ORDER BY created_at DESC");
     $stmt->execute();
     $allContent = $stmt->fetchAll();
 } catch (Exception $e) {
@@ -49,20 +49,27 @@ $error = $_GET['error'] ?? '';
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #141414;
-            color: white;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1d1d1f;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
         }
         
+        /* Applied macOS-style design with glassmorphism effects */
         .sidebar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100vh;
-            width: 250px;
-            background: #1a1a1a;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.18);
             padding: 2rem 0;
             z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
         .sidebar-brand {
@@ -71,13 +78,17 @@ $error = $_GET['error'] ?? '';
         }
         
         .sidebar-brand h4 {
-            color: #e50914;
-            font-weight: 700;
+            color: #1d1d1f;
+            font-weight: 600;
+            font-size: 1.5rem;
+            margin: 0;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         
         .sidebar-nav {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
         
         .sidebar-nav li {
@@ -85,43 +96,72 @@ $error = $_GET['error'] ?? '';
         }
         
         .sidebar-nav a {
-            display: block;
+            display: flex;
+            align-items: center;
             padding: 1rem 2rem;
-            color: #b3b3b3;
+            color: #1d1d1f;
             text-decoration: none;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            border-radius: 0 25px 25px 0;
+            margin-right: 1rem;
+            font-weight: 500;
+        }
+        
+        .sidebar-nav a i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
         }
         
         .sidebar-nav a:hover,
         .sidebar-nav a.active {
-            background: #333;
-            color: white;
+            background: rgba(255, 255, 255, 0.3);
+            color: #1d1d1f;
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
         
         .main-content {
-            margin-left: 250px;
+            margin-left: 280px;
             padding: 2rem;
+            min-height: 100vh;
         }
         
         .top-bar {
-            background: #1a1a1a;
-            padding: 1rem 2rem;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 1.5rem 2rem;
             margin: -2rem -2rem 2rem -2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .top-bar h2 {
+            margin: 0;
+            color: #1d1d1f;
+            font-weight: 600;
+            font-size: 1.8rem;
         }
         
         .content-table {
-            background: #1a1a1a;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 20px;
             overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
         .table-header {
-            background: #333;
+            background: rgba(255, 255, 255, 0.3);
             padding: 1.5rem 2rem;
-            border-bottom: 1px solid #444;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -129,119 +169,159 @@ $error = $_GET['error'] ?? '';
         
         .table-header h5 {
             margin: 0;
-            color: white;
+            color: #1d1d1f;
+            font-weight: 600;
+            font-size: 1.3rem;
         }
         
         .table {
-            color: white;
+            color: #1d1d1f;
             margin: 0;
         }
         
         .table th {
-            background: #333;
+            background: rgba(255, 255, 255, 0.2);
             border: none;
-            color: #b3b3b3;
+            color: #1d1d1f;
             font-weight: 600;
+            padding: 1rem;
         }
         
         .table td {
-            background: #1a1a1a;
+            background: transparent;
             border: none;
             vertical-align: middle;
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .btn-admin {
-            background: #e50914;
+            background: linear-gradient(135deg, #007AFF, #5856D6);
             border: none;
             color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
             text-decoration: none;
-            display: inline-block;
-            transition: background 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);
         }
         
         .btn-admin:hover {
-            background: #f40612;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.4);
             color: white;
         }
         
         .btn-admin-secondary {
-            background: #333;
-            border: none;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #1d1d1f;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
             text-decoration: none;
-            display: inline-block;
-            transition: background 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
         }
         
         .btn-admin-secondary:hover {
-            background: #555;
-            color: white;
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            color: #1d1d1f;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
         
         .btn-danger {
-            background: #dc3545;
+            background: linear-gradient(135deg, #FF3B30, #FF6B6B);
             border: none;
             color: white;
             padding: 0.5rem 1rem;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
         }
         
         .btn-danger:hover {
-            background: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(255, 59, 48, 0.4);
         }
         
         .content-thumbnail {
             width: 50px;
             height: 75px;
             object-fit: cover;
-            border-radius: 4px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         
         .type-badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .type-movie {
-            background: #007bff;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
             color: white;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
         }
         
         .type-series {
-            background: #28a745;
+            background: linear-gradient(135deg, #4ECDC4, #44A08D);
             color: white;
+            box-shadow: 0 2px 8px rgba(78, 205, 196, 0.3);
         }
         
         .alert {
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
         
         .alert-success {
-            background: #28a745;
-            color: white;
+            background: rgba(52, 199, 89, 0.2);
+            border: 1px solid rgba(52, 199, 89, 0.3);
+            color: #1d1d1f;
         }
         
         .alert-danger {
-            background: #dc3545;
-            color: white;
+            background: rgba(255, 59, 48, 0.2);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            color: #1d1d1f;
         }
         
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
             }
             
             .main-content {
                 margin-left: 0;
+            }
+            
+            .top-bar {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
             }
         }
     </style>
@@ -318,10 +398,15 @@ $error = $_GET['error'] ?? '';
                                 <tr>
                                     <td><?php echo $item['id']; ?></td>
                                     <td>
-                                        <?php if (!empty($item['thumbnail']) && file_exists($item['thumbnail'])): ?>
-                                            <img src="<?php echo htmlspecialchars($item['thumbnail']); ?>" 
+                                        <?php 
+                                        require_once 'includes/image-handler.php';
+                                        $poster_path = ImageHandler::forceDisplayPoster($item, 'small');
+                                        
+                                        if (!empty($poster_path) && !strpos($poster_path, 'placeholder.svg')): ?>
+                                            <img src="<?php echo htmlspecialchars($poster_path); ?>" 
                                                  alt="<?php echo htmlspecialchars($item['title']); ?>" 
-                                                 class="content-thumbnail">
+                                                 class="content-thumbnail"
+                                                 onerror="this.parentElement.innerHTML='<div class=\'content-thumbnail bg-secondary d-flex align-items-center justify-content-center\'><i class=\'fas fa-film\'></i></div>'">
                                         <?php else: ?>
                                             <div class="content-thumbnail bg-secondary d-flex align-items-center justify-content-center">
                                                 <i class="fas fa-film"></i>

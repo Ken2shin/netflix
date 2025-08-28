@@ -73,6 +73,115 @@ try {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Applied macOS-style design with glassmorphism effects */
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1d1d1f;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.25) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-brand, .nav-link {
+            color: #1d1d1f !important;
+            font-weight: 500;
+        }
+        
+        .sidebar {
+            background: rgba(255, 255, 255, 0.25) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            border-radius: 12px;
+            margin: 0.2rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.3) !important;
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.25) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .bg-primary {
+            background: linear-gradient(135deg, #007AFF, #5856D6) !important;
+            box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);
+        }
+        
+        .bg-success {
+            background: linear-gradient(135deg, #34C759, #30D158) !important;
+            box-shadow: 0 4px 15px rgba(52, 199, 89, 0.3);
+        }
+        
+        .bg-warning {
+            background: linear-gradient(135deg, #FF9500, #FFCC02) !important;
+            box-shadow: 0 4px 15px rgba(255, 149, 0, 0.3);
+        }
+        
+        .bg-info {
+            background: linear-gradient(135deg, #5AC8FA, #007AFF) !important;
+            box-shadow: 0 4px 15px rgba(90, 200, 250, 0.3);
+        }
+        
+        .table-dark {
+            background: transparent !important;
+            color: #1d1d1f !important;
+        }
+        
+        .table-dark th {
+            background: rgba(255, 255, 255, 0.2) !important;
+            border: none !important;
+            color: #1d1d1f !important;
+            font-weight: 600;
+        }
+        
+        .table-dark td {
+            background: transparent !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #1d1d1f !important;
+        }
+        
+        .badge {
+            border-radius: 20px !important;
+            padding: 0.4rem 0.8rem !important;
+            font-weight: 600 !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .bg-primary.badge {
+            background: linear-gradient(135deg, #007AFF, #5856D6) !important;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+        }
+    </style>
 </head>
 <body class="bg-dark text-white">
     <nav class="navbar navbar-expand-lg navbar-dark bg-danger">

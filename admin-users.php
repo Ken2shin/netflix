@@ -102,9 +102,159 @@ try {
     <title>Gestionar Usuarios - Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Applied macOS-style design with glassmorphism effects */
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1d1d1f;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.25) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-brand, .nav-link {
+            color: #1d1d1f !important;
+            font-weight: 500;
+        }
+        
+        .sidebar {
+            background: rgba(255, 255, 255, 0.25) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            border-radius: 12px;
+            margin: 0.2rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.3) !important;
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.25) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .table-dark {
+            background: transparent !important;
+            color: #1d1d1f !important;
+        }
+        
+        .table-dark th {
+            background: rgba(255, 255, 255, 0.2) !important;
+            border: none !important;
+            color: #1d1d1f !important;
+            font-weight: 600;
+        }
+        
+        .table-dark td {
+            background: transparent !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #1d1d1f !important;
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #007AFF, #5856D6) !important;
+            border: none !important;
+            border-radius: 8px !important;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-info:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #FF9500, #FFCC02) !important;
+            border: none !important;
+            border-radius: 8px !important;
+            box-shadow: 0 2px 8px rgba(255, 149, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-warning:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(255, 149, 0, 0.4);
+        }
+        
+        .badge {
+            border-radius: 20px !important;
+            padding: 0.4rem 0.8rem !important;
+            font-weight: 600 !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .bg-warning {
+            background: linear-gradient(135deg, #FF9500, #FFCC02) !important;
+            box-shadow: 0 2px 8px rgba(255, 149, 0, 0.3);
+        }
+        
+        .bg-secondary {
+            background: rgba(142, 142, 147, 0.3) !important;
+            backdrop-filter: blur(10px);
+        }
+        
+        .bg-info {
+            background: linear-gradient(135deg, #007AFF, #5856D6) !important;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+        }
+        
+        .modal-content {
+            background: rgba(255, 255, 255, 0.25) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            color: #1d1d1f !important;
+        }
+        
+        .pagination .page-link {
+            background: rgba(255, 255, 255, 0.3) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: #1d1d1f !important;
+            border-radius: 8px !important;
+            margin: 0 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .pagination .page-link:hover {
+            background: rgba(255, 255, 255, 0.4) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, #007AFF, #5856D6) !important;
+            border-color: transparent !important;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+        }
+    </style>
 </head>
-<body class="bg-dark text-white">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="admin-dashboard.php">
                 <i class="fas fa-crown"></i> Admin Panel
@@ -122,7 +272,7 @@ try {
 
     <div class="container-fluid">
         <div class="row">
-            <nav class="col-md-3 col-lg-2 d-md-block bg-secondary sidebar">
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
                 <div class="position-sticky pt-3">
                     <ul class="nav flex-column">
                         <li class="nav-item">
@@ -154,8 +304,8 @@ try {
                 </div>
             </nav>
 
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <main class="col-md-9 ms-sm-auto px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
                     <h1 class="h2">Gestionar Usuarios</h1>
                     <div class="btn-toolbar mb-2 mb-md-0">
                         <div class="btn-group me-2">
@@ -169,7 +319,7 @@ try {
                         <i class="fas fa-info-circle"></i> No hay usuarios registrados en el sistema.
                     </div>
                 <?php else: ?>
-                    <div class="card bg-secondary">
+                    <div class="card">
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-dark">
@@ -225,19 +375,19 @@ try {
                                 <ul class="pagination justify-content-center">
                                     <?php if ($page > 1): ?>
                                         <li class="page-item">
-                                            <a class="page-link bg-dark text-white" href="?page=<?php echo $page - 1; ?>">Anterior</a>
+                                            <a class="page-link" href="?page=<?php echo $page - 1; ?>">Anterior</a>
                                         </li>
                                     <?php endif; ?>
                                     
                                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                                         <li class="page-item <?php echo $i === $page ? 'active' : ''; ?>">
-                                            <a class="page-link bg-dark text-white" href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                                            <a class="page-link" href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
                                         </li>
                                     <?php endfor; ?>
                                     
                                     <?php if ($page < $totalPages): ?>
                                         <li class="page-item">
-                                            <a class="page-link bg-dark text-white" href="?page=<?php echo $page + 1; ?>">Siguiente</a>
+                                            <a class="page-link" href="?page=<?php echo $page + 1; ?>">Siguiente</a>
                                         </li>
                                     <?php endif; ?>
                                 </ul>

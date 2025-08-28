@@ -126,9 +126,74 @@ function createTables() {
             video_url VARCHAR(255),
             video_platform VARCHAR(50) DEFAULT 'direct',
             required_plan ENUM('basico', 'normal', 'premium') DEFAULT 'basico',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            imdb_id VARCHAR(20) UNIQUE,
+            imdb_rating DECIMAL(3,1),
+            metascore INT,
+            plot TEXT,
+            director VARCHAR(255),
+            writer TEXT,
+            actors TEXT,
+            awards TEXT,
+            box_office VARCHAR(100),
+            country VARCHAR(100),
+            language VARCHAR(100),
+            production VARCHAR(255),
+            data_source ENUM('manual', 'omdb') DEFAULT 'manual',
+            last_omdb_update TIMESTAMP NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_imdb_id (imdb_id),
+            INDEX idx_data_source (data_source),
+            INDEX idx_type (type),
+            INDEX idx_genre (genre),
+            INDEX idx_release_year (release_year)
         )");
 
+        if (!$database->columnExists('content', 'imdb_id')) {
+            $conn->exec("ALTER TABLE content 
+                ADD COLUMN imdb_id VARCHAR(20) UNIQUE,
+                ADD COLUMN imdb_rating DECIMAL(3,1),
+                ADD COLUMN metascore INT,
+                ADD COLUMN plot TEXT,
+                ADD COLUMN director VARCHAR(255),
+                ADD COLUMN writer TEXT,
+                ADD COLUMN actors TEXT,
+                ADD COLUMN awards TEXT,
+                ADD COLUMN box_office VARCHAR(100),
+                ADD COLUMN country VARCHAR(100),
+                ADD COLUMN language VARCHAR(100),
+                ADD COLUMN production VARCHAR(255),
+                ADD COLUMN data_source ENUM('manual', 'omdb') DEFAULT 'manual',
+                ADD COLUMN last_omdb_update TIMESTAMP NULL");
+            
+            // Add indexes
+            $conn->exec("CREATE INDEX IF NOT EXISTS idx_content_imdb_id ON content(imdb_id)");
+            $conn->exec("CREATE INDEX IF NOT EXISTS idx_content_data_source ON content(data_source)");
+        }
+
+        $conn->exec("CREATE TABLE IF NOT EXISTS omdb_search_cache (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            search_query VARCHAR(255) NOT NULL,
+            search_type VARCHAR(20) DEFAULT 'title',
+            search_year INT NULL,
+            response_data JSON NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL 24 HOUR),
+            INDEX idx_search_query (search_query),
+            INDEX idx_expires_at (expires_at)
+        )");
+
+        $conn->exec("CREATE TABLE IF NOT EXISTS omdb_failed_requests (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            request_type VARCHAR(50) NOT NULL,
+            request_data VARCHAR(255) NOT NULL,
+            error_message TEXT,
+            failed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            retry_count INT DEFAULT 0,
+            INDEX idx_request_data (request_data),
+            INDEX idx_failed_at (failed_at)
+        )");
+
+        // Tabla subscription_plans
         $conn->exec("CREATE TABLE IF NOT EXISTS subscription_plans (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(50) NOT NULL UNIQUE,
@@ -203,10 +268,10 @@ function createTables() {
         $stmt = $conn->prepare("SELECT COUNT(*) FROM content");
         $stmt->execute();
         if ($stmt->fetchColumn() == 0) {
-            $conn->exec("INSERT INTO content (title, description, type, genre, release_year, duration, rating, video_url, required_plan) VALUES 
-                ('Película Demo 1', 'Una película de demostración para probar el reproductor.', 'movie', 'Acción', 2023, 120, 'PG-13', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', 'basico'),
-                ('Película Demo 2', 'Otra película de demostración con contenido de prueba.', 'movie', 'Drama', 2022, 95, 'R', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', 'normal'),
-                ('Serie Demo 1', 'Una serie de demostración para probar la funcionalidad.', 'series', 'Comedia', 2023, 45, 'TV-14', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', 'premium')");
+            $conn->exec("INSERT INTO content (title, description, type, genre, release_year, duration, rating, video_url, required_plan, imdb_id, imdb_rating, director, actors, data_source) VALUES 
+                ('The Shawshank Redemption', 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.', 'movie', 'Drama', 1994, 142, 'R', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', 'basico', 'tt0111161', 9.3, 'Frank Darabont', 'Tim Robbins, Morgan Freeman', 'omdb'),
+                ('The Godfather', 'The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.', 'movie', 'Crime, Drama', 1972, 175, 'R', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', 'normal', 'tt0068646', 9.2, 'Francis Ford Coppola', 'Marlon Brando, Al Pacino', 'omdb'),
+                ('Breaking Bad', 'A high school chemistry teacher diagnosed with inoperable lung cancer turns to manufacturing and selling methamphetamine.', 'series', 'Crime, Drama, Thriller', 2008, 49, 'TV-MA', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', 'premium', 'tt0903747', 9.5, 'Vince Gilligan', 'Bryan Cranston, Aaron Paul', 'omdb')");
         }
 
     } catch (Exception $e) {

@@ -2017,7 +2017,6 @@ if (isset($_GET['success']) && $_GET['success'] == '1') {
             platformText.innerHTML = `<i class="${icon}"></i> Plataforma detectada: <strong>${platform}</strong>`;
             platformInfo.style.display = 'block';
         }
-        
     </script>
 </body>
 </html>

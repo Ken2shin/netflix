@@ -1,6 +1,7 @@
 <?php
 require_once 'config/config.php';
 require_once 'config/database.php';
+require_once 'includes/image-handler.php';
 
 requireProfile();
 
@@ -299,15 +300,13 @@ try {
             <?php foreach ($movies as $movie): ?>
                 <div class="movie-card" onclick="location.href='content-details.php?id=<?php echo $movie['id']; ?>'">
                     <div class="movie-poster">
-                        <?php if (!empty($movie['thumbnail']) && file_exists($movie['thumbnail'])): ?>
-                            <img src="<?php echo htmlspecialchars($movie['thumbnail']); ?>" 
-                                 alt="<?php echo htmlspecialchars($movie['title']); ?>" 
-                                 loading="lazy">
-                        <?php else: ?>
-                            <div class="poster-placeholder">
-                                <i class="fas fa-film" style="font-size: 2rem; color: #666;"></i>
-                            </div>
-                        <?php endif; ?>
+                        <?php 
+                        $posterUrl = force_display_poster($movie, 'medium');
+                        ?>
+                        <img src="<?php echo htmlspecialchars($posterUrl); ?>" 
+                             alt="<?php echo htmlspecialchars($movie['title']); ?>" 
+                             loading="lazy"
+                             onerror="this.src='/placeholder.svg?height=300&width=200&text=<?php echo urlencode($movie['title']); ?>'">
                     </div>
                     <div class="movie-overlay">
                         <h3 class="movie-title"><?php echo htmlspecialchars($movie['title']); ?></h3>
